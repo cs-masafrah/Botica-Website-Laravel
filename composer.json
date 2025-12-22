@@ -18,7 +18,7 @@
         "ext-pdo_mysql": "*",
         "ext-tokenizer": "*",
         "astrotomic/laravel-translatable": "^11.0.0",
-        "bagisto/graphql-api": "^2.3",
+        "bagisto/graphql-api": "dev-main",
         "bagisto/image-cache": "dev-master",
         "bagisto/rest-api": "^2.3",
         "barryvdh/laravel-dompdf": "^2.0.0",
