@@ -93,16 +93,19 @@
                                 <p>@{{ record.sort_order }}</p>
                                 <div class="flex justify-end gap-2">
                                     <!-- Edit Button - Opens Edit Modal -->
-                                    <a
-                                        v-if="record.actions && record.actions.find(a => a.index === 'edit')"
-                                        @click="editReel(record.id)"
-                                        class="cursor-pointer"
-                                        title="Edit"
-                                    >
-                                        <span class="icon-edit text-2xl text-blue-600 hover:text-blue-800"></span>
-                                    </a>
+                                    @if (bouncer()->hasPermission('reel.edit'))
+                                        <a
+                                            v-if="record.actions && record.actions.find(a => a.index === 'edit')"
+                                            @click="editReel(record.id)"
+                                            class="cursor-pointer"
+                                            title="Edit"
+                                        >
+                                            <span class="icon-edit text-2xl text-blue-600 hover:text-blue-800"></span>
+                                        </a>
+                                    @endif
 
                                     <!-- Delete Button - Uses Datagrid's performAction -->
+                                     @if (bouncer()->hasPermission('reel.delete'))
                                     <a
                                         v-if="record.actions && record.actions.find(a => a.index === 'delete')"
                                         @click="performAction(record.actions.find(a => a.index === 'delete'))"
@@ -111,6 +114,7 @@
                                     >
                                         <span class="icon-delete text-2xl text-red-600 hover:text-red-800"></span>
                                     </a>
+                                     @endif
                                 </div>
                             </div>
                         </template>

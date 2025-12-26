@@ -72,5 +72,9 @@ class ReelServiceProvider extends ServiceProvider
             dirname(__DIR__) . '/Config/acl.php',
             'acl'
         );
+        $this->mergeConfigFrom(
+            dirname(__DIR__) . '/Config/system.php',
+            'core'
+        );
     }
 }

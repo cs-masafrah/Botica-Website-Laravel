@@ -31,6 +31,9 @@ class ReelController extends Controller
      */
     public function index(): View|JsonResponse
     {
+        if (! bouncer()->hasPermission('reel') && ! bouncer()->hasPermission('reel.list')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
         // dd(trans('reel::app.admin.reels.messages.create-success'));
         if (request()->ajax()) {
             return datagrid(ReelDataGrid::class)->process();
@@ -44,6 +47,10 @@ class ReelController extends Controller
      */
     public function create(): View
     {
+        if (! bouncer()->hasPermission('reel.create')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
+
         $products = $this->productRepository->all();
 
         return view('reel::admin.create', compact('products'));
@@ -55,6 +62,9 @@ class ReelController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if (! bouncer()->hasPermission('reel.create')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'caption'      => 'nullable|string',
@@ -97,7 +107,9 @@ class ReelController extends Controller
      */
     public function show(Reel $reel)
     {
-        // $reel = $this->reelRepository->findOrFail($id);
+        if (! bouncer()->hasPermission('reel.view')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
 
         return view('reel::admin.show', compact('reel'));
     }
@@ -107,6 +119,10 @@ class ReelController extends Controller
      */
     public function edit(Reel $reel)
     {
+        if (! bouncer()->hasPermission('reel.edit')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
+
         // $reel = $this->reelRepository->findOrFail($id);
         $products = $this->productRepository->all();
         // Map video URL fully qualified
@@ -120,6 +136,10 @@ class ReelController extends Controller
     }
     public function update(Request $request, Reel $reel)
     {
+        // Check if user has RMA permission
+        if (! bouncer()->hasPermission('reel.edit')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'caption'      => 'nullable|string',
@@ -165,6 +185,10 @@ class ReelController extends Controller
      */
     public function destroy(Reel $reel)
     {
+        if (! bouncer()->hasPermission('reel.delete')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
+
         $this->reelRepository->delete($reel->id);
 
         return new JsonResponse([
