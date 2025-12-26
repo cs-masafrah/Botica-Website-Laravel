@@ -43,6 +43,7 @@ return [
         \Webkul\Theme\Providers\ModuleServiceProvider::class,
         \Webkul\User\Providers\ModuleServiceProvider::class,
         \Webkul\GraphQLAPI\Providers\ModuleServiceProvider::class,
+        \Webkul\Reel\Providers\ModuleServiceProvider::class,
     ],
 
 ];

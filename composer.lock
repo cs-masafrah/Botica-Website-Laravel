@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "540604538d7660546253da7bffaa4606",
+    "content-hash": "5a29a05a2031491390635d05edf8f9c4",
     "packages": [
         {
             "name": "astrotomic/laravel-translatable",
@@ -90,6 +90,51 @@
                 }
             ],
             "time": "2025-07-09T14:05:02+00:00"
+        },
+        {
+            "name": "bagisto/bagisto-package-generator",
+            "version": "v2.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bagisto/bagisto-package-generator.git",
+                "reference": "e6e9639c366f31f615160ff9c91bc78528aa8061"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bagisto/bagisto-package-generator/zipball/e6e9639c366f31f615160ff9c91bc78528aa8061",
+                "reference": "e6e9639c366f31f615160ff9c91bc78528aa8061",
+                "shasum": ""
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": [],
+                    "providers": [
+                        "Webkul\\PackageGenerator\\Providers\\PackageGeneratorServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Webkul\\PackageGenerator\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jitendra Singh",
+                    "email": "jitendra@webkul.com"
+                }
+            ],
+            "description": "Bagisto Package Generator",
+            "support": {
+                "issues": "https://github.com/bagisto/bagisto-package-generator/issues",
+                "source": "https://github.com/bagisto/bagisto-package-generator/tree/v2.1.2"
+            },
+            "time": "2025-09-02T16:15:30+00:00"
         },
         {
             "name": "bagisto/graphql-api",
@@ -7186,16 +7231,16 @@
         },
         {
             "name": "prettus/l5-repository",
-            "version": "2.10.1",
+            "version": "3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/andersao/l5-repository.git",
-                "reference": "27835088f92f42d73cc7f4f98b9386ddba709dcf"
+                "reference": "742c6f481c551cb99454e572240f0b60a04c5e69"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andersao/l5-repository/zipball/27835088f92f42d73cc7f4f98b9386ddba709dcf",
-                "reference": "27835088f92f42d73cc7f4f98b9386ddba709dcf",
+                "url": "https://api.github.com/repos/andersao/l5-repository/zipball/742c6f481c551cb99454e572240f0b60a04c5e69",
+                "reference": "742c6f481c551cb99454e572240f0b60a04c5e69",
                 "shasum": ""
             },
             "require": {
@@ -7207,6 +7252,7 @@
                 "illuminate/pagination": "~5.0|~6.0|~7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
                 "illuminate/support": "~5.0|~6.0|~7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
                 "illuminate/validation": "~5.0|~6.0|~7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+                "php": "^7.1|^8.0",
                 "prettus/laravel-validation": "~1.1|~1.2|~1.3|~1.4|~1.5|~1.6|~1.7"
             },
             "suggest": {
@@ -7255,7 +7301,7 @@
                 "source": "https://github.com/andersao/l5-repository",
                 "wiki": "https://github.com/andersao/l5-repository"
             },
-            "time": "2025-03-10T11:13:50+00:00"
+            "time": "2025-10-10T13:25:00+00:00"
         },
         {
             "name": "prettus/laravel-validation",
