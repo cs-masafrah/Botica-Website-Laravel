@@ -2,8 +2,9 @@
 
 namespace Webkul\Reel\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+use Nuwave\Lighthouse\Events\BuildSchemaString;
 
 class ReelServiceProvider extends ServiceProvider
 {
@@ -43,6 +44,16 @@ class ReelServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../Resources/lang' => resource_path('lang/vendor/reel'),
         ], 'reel-translations');
+
+        $this->app['events']->listen(BuildSchemaString::class, function (BuildSchemaString $event) {
+            $schemaPath = __DIR__ . '/../graphql/schema.graphql';
+
+            if (file_exists($schemaPath)) {
+                return file_get_contents($schemaPath);
+            }
+
+            return '';
+        });
     }
 
     /**
