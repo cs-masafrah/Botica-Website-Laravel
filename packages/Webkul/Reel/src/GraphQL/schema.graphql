@@ -1,49 +1,54 @@
-# Reel Type
 type Reel {
-    id: ID!
-    title: String!
-    caption: String
-    video_path: String!
-    video_url: String! @method(name: "getVideoUrl")
-    thumbnail_path: String
-    thumbnail_url: String @method(name: "getThumbnailUrl")
-    product_id: Int
-    product: Product @belongsTo
-    
-    # This field maps to the getProductNameAttribute() in your Reel model
-    product_name: String @rename(attribute: "product_name")
-    
-    duration: Int
-    sort_order: Int
-    is_active: Boolean
-    views_count: Int
-    likes_count: Int
-    created_at: DateTime
-    updated_at: DateTime
+  id: ID!
+  title: String!
+  caption: String
+  video_path: String!
+  video_url: String! @method(name: "getVideoUrl")
+  thumbnail_path: String
+  thumbnail_url: String @method(name: "getThumbnailUrl")
+  product_id: Int
+  product: Product @belongsTo
+  product_name: String @rename(attribute: "product_name")
+  duration: Int
+  sort_order: Int
+  is_active: Boolean
+  views_count: Int
+  likes_count: Int
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input ReelInput {
+  title: String!
+  caption: String
+  product_id: Int
+  duration: Int
+  sort_order: Int
+  is_active: Boolean
+  # NOTE: File uploads are typically done outside GraphQL, so send URLs or IDs here
+  video_path: String
+  thumbnail_path: String
 }
 
 extend type Query {
-    # List all reels with pagination and filtering
-    reels(
-        input: FilterReelInput
-    ): [Reel!]! @paginate(type: "PAGINATOR" defaultCount: 10 model: "Webkul\\Reel\\Models\\Reel")
-
-    # Get a single reel
-    reel(id: ID! @eq): Reel @find(model: "Webkul\\Reel\\Models\\Reel")
+  reels(input: FilterReelInput): [Reel!]! @paginate(type: "PAGINATOR" defaultCount: 10 model: "Webkul\\Reel\\Models\\Reel")
+  reel(id: ID! @eq): Reel @find(model: "Webkul\\Reel\\Models\\Reel")
 }
 
 extend type Mutation {
-    # Delete a reel
-    deleteReel(id: ID!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@delete")
+  createReel(input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@create")
+  updateReel(id: ID!, input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@update")
+  deleteReel(id: ID!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@delete")
 }
 
 input FilterReelInput {
-    id: ID
-    title: String
-    is_active: Boolean
+  id: ID
+  title: String
+  is_active: Boolean
 }
 
 type ReelResponse {
-    success: Boolean!
-    message: String
+  success: Boolean!
+  message: String
+  reel: Reel
 }
