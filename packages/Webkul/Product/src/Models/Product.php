@@ -22,6 +22,7 @@ use Webkul\Inventory\Models\InventorySourceProxy;
 use Webkul\Product\Contracts\Product as ProductContract;
 use Webkul\Product\Database\Factories\ProductFactory;
 use Webkul\Product\Type\AbstractType;
+use Webkul\Reel\Models\ReelProxy;
 
 class Product extends Model implements ProductContract
 {
