@@ -44,4 +44,7 @@ return [
     Webkul\Theme\Providers\ThemeServiceProvider::class,
     Webkul\User\Providers\UserServiceProvider::class,
     Webkul\Reel\Providers\ReelServiceProvider::class,
+    Webkul\Product\Providers\GraphQLServiceProvider::class,
+    Webkul\Product\Providers\GraphQLNamespaceServiceProvider::class,
+
 ];

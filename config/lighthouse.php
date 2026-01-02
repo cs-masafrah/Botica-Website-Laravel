@@ -214,10 +214,14 @@ return [
         'interfaces'    => 'Webkul\\GraphQLAPI\\Interfaces',
         'unions'        => 'Webkul\\GraphQLAPI\\Unions',
         'scalars'       => 'Webkul\\GraphQLAPI\\Scalars',
-        'types'         => 'Webkul\\GraphQLAPI\\Types',
+        'types'         => [
+            'Webkul\\GraphQLAPI\\Types',
+            'Webkul\\Product\\GraphQL\\Types', // Add this
+        ],
 
         'queries' => [
             'Webkul\\GraphQLAPI\\Queries',
+            'Webkul\\Product\\GraphQL\\Queries', // Add this
         ],
 
         'mutations' => [
