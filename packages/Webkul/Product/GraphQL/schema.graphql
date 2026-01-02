@@ -1,0 +1,155 @@
+"""
+Input for products by attribute query
+"""
+input ProductsByAttributeInput {
+    """
+    Attribute code to filter by (e.g., 'brand', 'color', 'size')
+    """
+    attribute: String!
+
+    """
+    Value to filter by
+    """
+    value: String!
+
+    """
+    Category IDs or slugs
+    """
+    categories: [String!]
+
+    """
+    Minimum price
+    """
+    min_price: Float
+
+    """
+    Maximum price
+    """
+    max_price: Float
+
+    """
+    In stock only
+    """
+    in_stock: Boolean
+
+    """
+    Sort by field
+    """
+    sortBy: String
+
+    """
+    Sort order (asc/desc)
+    """
+    sortOrder: String
+
+    """
+    Items per page
+    """
+    perPage: Int = 10
+
+    """
+    Page number
+    """
+    page: Int = 1
+}
+
+"""
+Pagination information
+"""
+type PaginatorInfo {
+    count: Int!
+    currentPage: Int!
+    lastPage: Int!
+    total: Int!
+    perPage: Int!
+    hasMorePages: Boolean!
+    firstItem: Int
+    lastItem: Int
+}
+
+"""
+Product paginator type
+"""
+type ProductPaginator {
+    paginatorInfo: PaginatorInfo!
+    data: [Product!]!
+}
+
+"""
+Attribute value count type
+"""
+type AttributeValueCount {
+    value: String!
+    label: String!
+    product_count: Int!
+    option_id: Int
+}
+
+"""
+Attribute count result type
+"""
+type AttributeCountResult {
+    attribute: String!
+    value: String!
+    total_products: Int!
+}
+
+"""
+Attribute values with counts result type
+"""
+type AttributeValuesWithCounts {
+    attribute: String!
+    values: [AttributeValueCount!]!
+    total_values: Int!
+}
+
+extend type Query {
+    """
+    Get products filtered by attribute value
+    """
+    productsByAttribute(
+        input: ProductsByAttributeInput!
+    ): ProductPaginator
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
+
+    """
+    DEBUG: Check attribute and value matching
+    """
+    debugAttribute(
+        attribute: String = "brand"
+        value: String = "Dior"
+    ): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debug")
+
+    """
+    Get total product count for a specific attribute value
+    """
+    attributeProductCount(
+        attribute: String!
+        value: String!
+    ): AttributeCountResult
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeProductCount")
+
+    """
+    Get all values for an attribute with product counts
+    """
+    attributeValuesWithCounts(
+        attribute: String!
+    ): AttributeValuesWithCounts
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
+
+    """
+    DEBUG: Check product relationships
+    """
+    debugRelationships: JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugRelationships")
+
+    """
+    DEBUG: Direct SQL query
+    """
+    debugQuery(
+        attribute: String = "brand"
+        value: String = "Dior"
+    ): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
+}
