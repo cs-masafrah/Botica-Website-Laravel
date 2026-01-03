@@ -5,6 +5,7 @@ namespace Webkul\Product\GraphQL\Queries;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
+use Illuminate\Support\Facades\Storage;
 
 class ProductsByAttributeQuery
 {
@@ -126,18 +127,6 @@ class ProductsByAttributeQuery
             });
         }
 
-        // Filter by price - REMOVED FOR NOW since it causes errors
-        // if (isset($input['min_price']) || isset($input['max_price'])) {
-        //     $query->whereHas('price', function ($q) use ($input) {
-        //         if (isset($input['min_price'])) {
-        //             $q->where('price', '>=', $input['min_price']);
-        //         }
-        //         if (isset($input['max_price'])) {
-        //             $q->where('price', '<=', $input['max_price']);
-        //         }
-        //     });
-        // }
-
         // Filter by stock - simplified
         if (isset($input['in_stock']) && $input['in_stock']) {
             // Try to filter by inventory if the relationship exists
@@ -152,7 +141,7 @@ class ProductsByAttributeQuery
         return $query;
     }
 
-        /**
+    /**
      * Get total product count for an attribute value
      */
     public function attributeProductCount($rootValue, array $args, GraphQLContext $context)
@@ -221,22 +210,29 @@ class ProductsByAttributeQuery
             // For select attributes, get all options with counts
             $options = \DB::table('attribute_options')
                 ->where('attribute_id', $attribute->id)
-                ->get();
+                ->get(['id', 'admin_name', 'image']); // Added 'image' field
 
             foreach ($options as $option) {
                 $count = $this->productRepository
                     ->whereHas('attribute_values', function ($q) use ($attribute, $option) {
                         $q->where('attribute_id', $attribute->id)
-                          ->where('integer_value', $option->id);
+                            ->where('integer_value', $option->id);
                     })
                     ->count();
 
                 if ($count > 0) {
+                    // Get image URL if exists
+                    $imageUrl = null;
+                    if ($option->image) {
+                        $imageUrl = Storage::url($option->image);
+                    }
+
                     $results[] = [
                         'value' => $option->admin_name,
                         'label' => $option->admin_name,
                         'product_count' => $count,
                         'option_id' => $option->id,
+                        'image_url' => $imageUrl, // Added image_url field
                     ];
                 }
             }
@@ -253,7 +249,7 @@ class ProductsByAttributeQuery
                 $count = $this->productRepository
                     ->whereHas('attribute_values', function ($q) use ($attribute, $value) {
                         $q->where('attribute_id', $attribute->id)
-                          ->where('text_value', $value->text_value);
+                            ->where('text_value', $value->text_value);
                     })
                     ->count();
 
@@ -262,6 +258,7 @@ class ProductsByAttributeQuery
                         'value' => $value->text_value,
                         'label' => $value->text_value,
                         'product_count' => $count,
+                        'image_url' => null, // Text attributes don't have images
                     ];
                 }
             }
@@ -362,5 +359,44 @@ class ProductsByAttributeQuery
         ];
     }
 
-    // ... other methods (debug, attributeProductCount, etc.)
+    /**
+     * DEBUG: Check attribute and value matching (to match GraphQL schema)
+     */
+    public function debug($rootValue, array $args, GraphQLContext $context)
+    {
+        $attributeCode = $args['attribute'] ?? 'brand';
+        $value = $args['value'] ?? 'Dior';
+
+        $attribute = $this->attributeRepository->findOneByField('code', $attributeCode);
+
+        if (!$attribute) {
+            return ['error' => "Attribute '{$attributeCode}' not found"];
+        }
+
+        // Get option ID
+        $optionId = \DB::table('attribute_options')
+            ->where('attribute_id', $attribute->id)
+            ->where('admin_name', $value)
+            ->value('id');
+
+        // Get product IDs directly
+        $productIds = \DB::table('product_attribute_values')
+            ->where('attribute_id', $attribute->id)
+            ->where('integer_value', $optionId)
+            ->pluck('product_id');
+
+        // Get products count
+        $productCount = $productIds->count();
+
+        return [
+            'attribute' => $attributeCode,
+            'value' => $value,
+            'attribute_id' => $attribute->id,
+            'attribute_type' => $attribute->type,
+            'option_id' => $optionId,
+            'product_ids_found' => $productIds->toArray(),
+            'product_count' => $productCount,
+            'note' => 'Debug attribute and value matching'
+        ];
+    }
 }

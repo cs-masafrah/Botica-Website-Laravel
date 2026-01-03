@@ -83,6 +83,7 @@ type AttributeValueCount {
     label: String!
     product_count: Int!
     option_id: Int
+    image_url: String
 }
 
 """
