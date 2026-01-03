@@ -11,6 +11,7 @@ use Webkul\Attribute\Enums\AttributeTypeEnum;
 use Webkul\Attribute\Enums\SwatchTypeEnum;
 use Webkul\Attribute\Enums\ValidationEnum;
 use Webkul\Attribute\Repositories\AttributeRepository;
+use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Core\Rules\Code;
 use Webkul\Product\Repositories\ProductRepository;
 
@@ -23,7 +24,8 @@ class AttributeController extends Controller
      */
     public function __construct(
         protected AttributeRepository $attributeRepository,
-        protected ProductRepository $productRepository
+        protected ProductRepository $productRepository,
+        protected AttributeOptionRepository $attributeOptionRepository
     ) {}
 
     /**
@@ -85,6 +87,9 @@ class AttributeController extends Controller
 
         $attribute = $this->attributeRepository->create($requestData);
 
+        // Handle attribute options (without image upload logic here - let repository handle it)
+        // $this->handleAttributeOptions($attribute, $requestData, 'create');
+
         Event::dispatch('catalog.attribute.create.after', $attribute);
 
         session()->flash('success', trans('admin::app.catalog.attributes.create-success'));
@@ -132,7 +137,7 @@ class AttributeController extends Controller
     public function update(int $id)
     {
         $rules = [
-            'code'          => ['required', 'unique:attributes,code,'.$id, new Code],
+            'code'          => ['required', 'unique:attributes,code,' . $id, new Code],
             'admin_name'    => 'required',
             'type'          => 'required',
         ];
@@ -151,11 +156,44 @@ class AttributeController extends Controller
 
         $attribute = $this->attributeRepository->update($requestData, $id);
 
+        // Handle attribute options (without image upload logic here - let repository handle it)
+        // $this->handleAttributeOptions($attribute, $requestData, 'update');
+
         Event::dispatch('catalog.attribute.update.after', $attribute);
 
         session()->flash('success', trans('admin::app.catalog.attributes.update-success'));
 
         return redirect()->route('admin.catalog.attributes.index');
+    }
+
+    /**
+     * Handle attribute options
+     * REMOVED the image upload logic from here - let repository handle it
+     */
+    private function handleAttributeOptions($attribute, $requestData, $action = 'create')
+    {
+        if (!isset($requestData['options'])) {
+            return;
+        }
+
+        foreach ($requestData['options'] as $optionId => $optionData) {
+            // REMOVED: Image upload logic - let the repository handle it
+
+            if ($action === 'create') {
+                // Create new option
+                $optionData['attribute_id'] = $attribute->id;
+                $this->attributeOptionRepository->create($optionData);
+            } else {
+                // Update existing option
+                if (is_numeric($optionId)) {
+                    $this->attributeOptionRepository->update($optionData, $optionId);
+                } else {
+                    // This is a new option during update
+                    $optionData['attribute_id'] = $attribute->id;
+                    $this->attributeOptionRepository->create($optionData);
+                }
+            }
+        }
     }
 
     /**

@@ -2,12 +2,13 @@
 
 namespace Webkul\Attribute\Models;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Webkul\Attribute\Contracts\AttributeOption as AttributeOptionContract;
-use Webkul\Attribute\Database\Factories\AttributeOptionFactory;
+use Illuminate\Support\Facades\Storage;
 use Webkul\Core\Eloquent\TranslatableModel;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Webkul\Attribute\Database\Factories\AttributeOptionFactory;
+use Webkul\Attribute\Contracts\AttributeOption as AttributeOptionContract;
 
 class AttributeOption extends TranslatableModel implements AttributeOptionContract
 {
@@ -22,6 +23,7 @@ class AttributeOption extends TranslatableModel implements AttributeOptionContra
         'swatch_value',
         'sort_order',
         'attribute_id',
+        'image', // Add this line
     ];
 
     /**
@@ -50,7 +52,7 @@ class AttributeOption extends TranslatableModel implements AttributeOptionContra
             $this->swatch_value
             && $this->attribute->swatch_type == 'image'
         ) {
-            return url('cache/small/'.$this->swatch_value);
+            return url('cache/small/' . $this->swatch_value);
         }
 
         return null;
@@ -70,5 +72,14 @@ class AttributeOption extends TranslatableModel implements AttributeOptionContra
     protected static function newFactory(): Factory
     {
         return AttributeOptionFactory::new();
+    }
+
+      public function getImageUrlAttribute()
+    {
+        if (! $this->image) {
+            return null;
+        }
+
+        return Storage::url($this->image);
     }
 }

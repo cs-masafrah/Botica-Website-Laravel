@@ -1451,6 +1451,7 @@ return [
                 'value-per-channel'      => 'القيمة لكل قناة',
                 'value-per-locale'       => 'القيمة لكل لغة',
                 'yes'                    => 'نعم',
+                'option-image' => 'الصورة',
 
                 'option' => [
                     'color'    => 'عينة لون',
@@ -1516,6 +1517,7 @@ return [
                 'value-per-channel'     => 'القيمة لكل قناة',
                 'value-per-locale'      => 'القيمة لكل لغة',
                 'yes'                   => 'نعم',
+                'option-image' => 'الصورة',
 
                 'option' => [
                     'color'    => 'عينة لون',

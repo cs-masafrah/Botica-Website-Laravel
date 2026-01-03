@@ -1451,6 +1451,7 @@ return [
                 'value-per-channel'     => 'Value Per Channel',
                 'value-per-locale'      => 'Value Per Locale',
                 'yes'                   => 'Yes',
+                'option-image' => 'Option Image',
 
                 'option'                => [
                     'color'    => 'Color Swatch',
@@ -1516,6 +1517,7 @@ return [
                 'value-per-channel'     => 'Value Per Channel',
                 'value-per-locale'      => 'Value Per Locale',
                 'yes'                   => 'Yes',
+                'option-image' => 'Option Image',
 
                 'option' => [
                     'color'    => 'Color Swatch',
