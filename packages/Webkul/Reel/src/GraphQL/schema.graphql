@@ -14,6 +14,7 @@ type Reel {
   is_active: Boolean
   views_count: Int
   likes_count: Int
+  is_liked: Boolean @method(name: "getIsLiked")
   created_at: DateTime
   updated_at: DateTime
 }
@@ -25,7 +26,6 @@ input ReelInput {
   duration: Int
   sort_order: Int
   is_active: Boolean
-  # NOTE: File uploads are typically done outside GraphQL, so send URLs or IDs here
   video_path: String
   thumbnail_path: String
 }
@@ -33,22 +33,57 @@ input ReelInput {
 extend type Query {
   reels(input: FilterReelInput): [Reel!]! @paginate(type: "PAGINATOR" defaultCount: 10 model: "Webkul\\Reel\\Models\\Reel")
   reel(id: ID! @eq): Reel @find(model: "Webkul\\Reel\\Models\\Reel")
+  reelAnalytics(id: ID!): ReelAnalyticsResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@analytics")
 }
 
 extend type Mutation {
   createReel(input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@create")
   updateReel(id: ID!, input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@update")
   deleteReel(id: ID!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@delete")
+
+  # Like/View mutations
+  likeReel(id: ID!): ReelLikeResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@like")
+  viewReel(id: ID!): ReelViewResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@view")
 }
 
 input FilterReelInput {
   id: ID
   title: String
   is_active: Boolean
+  sort_by: String
+  sort_order: String
 }
 
 type ReelResponse {
   success: Boolean!
   message: String
   reel: Reel
+}
+
+type ReelLikeResponse {
+  success: Boolean!
+  message: String
+  reel: Reel
+  liked: Boolean
+}
+
+type ReelViewResponse {
+  success: Boolean!
+  message: String
+  reel: Reel
+  views_count: Int
+}
+
+type ReelAnalyticsResponse {
+  success: Boolean!
+  message: String
+  reel: Reel
+  analytics: ReelAnalytics
+}
+
+type ReelAnalytics {
+  total_likes: Int
+  total_views: Int
+  unique_viewers: Int
+  engagement_rate: Float
 }
