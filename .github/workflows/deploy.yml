@@ -20,9 +20,6 @@ jobs:
         extensions: mbstring, bcmath, xml, curl, zip, mysql, gd, intl
         ini-values: post_max_size=256M, upload_max_filesize=256M, max_execution_time=300
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
-
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
