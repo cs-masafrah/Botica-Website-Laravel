@@ -266,6 +266,10 @@ return [
                     'name' => 'Categories Collections',
                 ],
 
+                'product-by-brand' => [
+                    'name' => 'Categories Collections',
+                ],
+
                 'featured-collections' => [
                     'name' => 'Featured Collections',
 

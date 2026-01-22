@@ -2,12 +2,12 @@
     <x-slot:title>
         @lang('admin::app.settings.themes.index.title')
     </x-slot>
-   
+
     <div class="flex items-center justify-between">
         <p class="text-xl font-bold text-gray-800 dark:text-white">
             @lang('admin::app.settings.themes.index.title')
         </p>
-        
+
         <div class="flex items-center gap-x-2.5">
             <div class="flex items-center gap-x-2.5">
                 {!! view_render_event('bagisto.admin.settings.themes.create.before') !!}
@@ -19,14 +19,14 @@
                         class="primary-button"
                     >
                         @lang('admin::app.settings.themes.index.create-btn')
-                    </button>  
+                    </button>
                 </v-create-theme-form>
 
                 {!! view_render_event('bagisto.admin.settings.themes.create.after') !!}
             </div>
         </div>
     </div>
-    
+
     {!! view_render_event('bagisto.admin.settings.themes.list.before') !!}
 
     <x-admin::datagrid :src="route('admin.settings.themes.index')" />
@@ -113,7 +113,7 @@
                                         rules="required"
                                         value="product_carousel"
                                     >
-                                        <option 
+                                        <option
                                             v-for="(type, key) in themeTypes"
                                             :value="key"
                                             :text="type"
@@ -138,7 +138,7 @@
                                     >
                                         @foreach (core()->getAllChannels() as $channel)
                                             <option value="{{ $channel->id }}">{{ $channel->name }}</option>
-                                        @endforeach 
+                                        @endforeach
                                     </x-admin::form.control-group.control>
 
                                     <x-admin::form.control-group.error control-name="type" />
@@ -194,6 +194,7 @@
                         themeTypes: {
                             product_carousel: "@lang('admin::app.settings.themes.create.type.product-carousel')",
                             category_carousel: "@lang('admin::app.settings.themes.create.type.category-carousel')",
+                            product_by_brand: "@lang('admin::app.settings.themes.create.type.product-by-brand')",
                             static_content: "@lang('admin::app.settings.themes.create.type.static-content')",
                             image_carousel: "@lang('admin::app.settings.themes.create.type.image-carousel')",
                             footer_links: "@lang('admin::app.settings.themes.create.type.footer-links')",
@@ -214,7 +215,7 @@
 
                                 if (response.data.redirect_url) {
                                     window.location.href = response.data.redirect_url;
-                                } 
+                                }
                             })
                             .catch((error) => {
                                 this.isLoading = false;
@@ -228,5 +229,5 @@
             });
         </script>
     @endPushOnce
-    
+
 </x-admin::layouts>
