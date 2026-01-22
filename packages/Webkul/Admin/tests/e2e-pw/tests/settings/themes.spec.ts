@@ -124,6 +124,63 @@ test.describe("theme management", () => {
         ).toBeVisible();
     });
 
+    test("should create a product by brand theme", async ({ adminPage }) => {
+        /**
+         * Reaching to the theme listing page.
+         */
+        await adminPage.goto("admin/settings/themes");
+
+        /**
+         * Opening create theme form in modal.
+         */
+        await adminPage.getByRole("button", { name: "Create Theme" }).click();
+        await adminPage.locator('input[name="name"]').fill(generateName());
+        await adminPage.locator('input[name="sort_order"]').fill("1");
+        await adminPage
+            .locator('select[name="type"]')
+            .selectOption("product_by_brand");
+        await adminPage.locator('select[name="channel_id"]').selectOption("1");
+        await adminPage
+            .locator('select[name="theme_code"]')
+            .selectOption("default");
+        await adminPage.getByRole("button", { name: "Save Theme" }).click();
+
+        /**
+         * After creating the product, the page is redirected to the edit theme page, where
+         * all the details need to be filled in. Waiting for the main form to be visible.
+         */
+        await adminPage.waitForSelector(
+            'form[action*="/settings/themes/edit"]'
+        );
+
+        /**
+         * Category Carousel Section.
+         */
+        await adminPage
+            .locator('select[name="en[options][filters][sort]"]')
+            .selectOption("asc");
+        await adminPage
+            .locator('input[name="en[options][filters][limit]"]')
+            .fill("10");
+
+        /**
+         * General Section.
+         */
+        // Clicking the status and verify the toggle state.
+        await adminPage.click('label[for="status"]');
+        const toggleInput = await adminPage.locator('input[name="status"]');
+        await expect(toggleInput).toBeChecked();
+
+        /**
+         * Save theme.
+         */
+        await adminPage.getByRole("button", { name: "Save" }).click();
+
+        await expect(
+            adminPage.getByText("Theme updated successfully")
+        ).toBeVisible();
+    });
+
     test("should create a static content theme", async ({ adminPage }) => {
         /**
          * Reaching to the theme listing page.

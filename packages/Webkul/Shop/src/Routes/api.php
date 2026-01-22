@@ -1,15 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Webkul\Shop\Http\Controllers\API\AddressController;
 use Webkul\Shop\Http\Controllers\API\CartController;
-use Webkul\Shop\Http\Controllers\API\CategoryController;
-use Webkul\Shop\Http\Controllers\API\CompareController;
 use Webkul\Shop\Http\Controllers\API\CoreController;
-use Webkul\Shop\Http\Controllers\API\CustomerController;
+use Webkul\Shop\Http\Controllers\API\BrandController;
+use Webkul\Shop\Http\Controllers\API\ReviewController;
+use Webkul\Shop\Http\Controllers\API\AddressController;
+use Webkul\Shop\Http\Controllers\API\CompareController;
 use Webkul\Shop\Http\Controllers\API\OnepageController;
 use Webkul\Shop\Http\Controllers\API\ProductController;
-use Webkul\Shop\Http\Controllers\API\ReviewController;
+use Webkul\Shop\Http\Controllers\API\CategoryController;
+use Webkul\Shop\Http\Controllers\API\CustomerController;
 use Webkul\Shop\Http\Controllers\API\WishlistController;
 
 Route::group(['prefix' => 'api'], function () {
@@ -30,6 +31,10 @@ Route::group(['prefix' => 'api'], function () {
 
         Route::get('max-price/{id?}', 'getProductMaxPrice')->name('shop.api.categories.max_price');
     });
+
+     Route::controller(BrandController::class)->prefix('brands')->group(function () {
+            Route::get('', 'index')->name('shop.api.brands.index');
+        });
 
     Route::controller(ProductController::class)->prefix('products')->group(function () {
         Route::get('', 'index')->name('shop.api.products.index');

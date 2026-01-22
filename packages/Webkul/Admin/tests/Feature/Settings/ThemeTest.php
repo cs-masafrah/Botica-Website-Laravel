@@ -56,6 +56,7 @@ it('should store the newly created theme', function () {
         'type'       => $type = fake()->randomElement([
             'product_carousel',
             'category_carousel',
+            'product_by_brand',
             'image_carousel',
             'footer_links',
             'services_content',
@@ -117,7 +118,21 @@ it('should update the theme customizations', function () {
 
             break;
 
-        case ThemeCustomization::CATEGORY_CAROUSEL:
+        case ThemeCustomization::PRODUCT_BY_BRAND:
+            $data[app()->getLocale()] = [
+                'options' => [
+                    'title'   => fake()->title(),
+                    'filters' => [
+                        'sort'      => 'desc',
+                        'limit'     => '10',
+                        'parent_id' => '1',
+                    ],
+                ],
+            ];
+
+            break;
+
+            case ThemeCustomization::CATEGORY_CAROUSEL:
             $data[app()->getLocale()] = [
                 'options' => [
                     'title'   => fake()->title(),

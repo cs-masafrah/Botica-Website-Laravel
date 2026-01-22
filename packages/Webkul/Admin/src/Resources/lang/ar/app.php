@@ -3468,6 +3468,7 @@ return [
 
                 'type' => [
                     'category-carousel' => 'شريط الفئات',
+                    'product-by-brand' => 'المنتجات حسب العلامة التجارية',
                     'footer-links'      => 'روابط التذييل',
                     'image-carousel'    => 'عرض الصور',
                     'product-carousel'  => 'شريط المنتجات',
@@ -3487,6 +3488,8 @@ return [
                 'back'                          => 'رجوع',
                 'category-carousel'             => 'شريط الفئات',
                 'category-carousel-description' => 'عرض الفئات الديناميكية بشكل جذاب باستخدام شريط الفئات المتجاوب.',
+                'product-by-brand'             => 'المنتجات حسب العلامة التجارية',
+                'product-by-brand-description' => 'عرض المنتجات بشكل منظم حسب العلامات التجارية مع تصميم جذاب وسهل التصفح.',
                 'channels'                      => 'القنوات',
                 'column'                        => 'عمود',
                 'create-filter'                 => 'إنشاء مرشح',

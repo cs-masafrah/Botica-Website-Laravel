@@ -38,6 +38,8 @@ class ThemeCustomizationTranslation extends Model implements ThemeCustomizationT
      */
     public const CATEGORY_CAROUSEL = 'category_carousel';
 
+    public const PRODUCT_BY_BRAND = 'product_by_brand';
+
     /**
      * Footer links precision.
      *
