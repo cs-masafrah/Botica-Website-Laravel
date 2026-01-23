@@ -81,13 +81,13 @@
                         />
                 @break --}}
             @case ($customization::PRODUCT_BY_BRAND)
-    <!-- Brands carousel -->
-    <x-shop::brands.carousel
-        :title="$data['title'] ?? ''"
-        :src="route('shop.api.brands.index', $data['filters'] ?? [])"
-        :navigation-link="route('shop.search.index', $data['filters'] ?? [])"
-        aria-label="{{ trans('shop::app.home.index.brands-carousel') }}"
-    />
+            <!-- Brands carousel -->
+            <x-shop::brands.carousel
+                :title="$data['title'] ?? ''"
+                :src="route('shop.api.brands.index', $data['filters'] ?? [])"
+                :navigation-link="route('shop.search.index', $data['filters'] ?? [])"
+                aria-label="{{ trans('shop::app.home.index.brands-carousel') }}"
+            />
             @break
             @case ($customization::PRODUCT_CAROUSEL)
                 <!-- Product Carousel -->
