@@ -22,13 +22,15 @@
                             class="h-[110px] w-[110px] rounded-full bg-zinc-100 max-md:h-20 max-md:w-20 max-sm:h-[60px] max-sm:w-[60px]"
                             :aria-label="brand.name"
                         >
+
                           <x-shop::media.images.lazy
-        ::src="brand.image || fallback"
-        ::alt="brand.name"
-        width="110"
-        height="110"
-        class="object-cover w-full h-full rounded-full"
-    />
+                            ::src="brand.image || fallback"
+                            ::alt="brand.name"
+                            width="110"
+                            height="110"
+                            class="object-cover w-full h-full rounded-full"
+                        />
+                        </a>
 
                         <a
                             :href="brand.slug"
