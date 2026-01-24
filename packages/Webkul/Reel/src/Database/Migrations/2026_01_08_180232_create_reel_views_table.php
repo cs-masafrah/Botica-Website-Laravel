@@ -1,10 +1,12 @@
 <?php
 
+namespace Webkul\Reel\Database\Migrations;
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateReelViewsTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
@@ -28,4 +30,4 @@ class CreateReelViewsTable extends Migration
     {
         Schema::dropIfExists('reel_views');
     }
-}
+};
