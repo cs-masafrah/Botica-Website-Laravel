@@ -10,7 +10,6 @@
     "require": {},
     "autoload": {
         "psr-4": {
-        // "Webkul\\Product\\": ["src", "GraphQL"]
             "Webkul\\Product\\": ["src", "GraphQL"]
         }
     },
