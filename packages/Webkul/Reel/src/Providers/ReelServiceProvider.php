@@ -45,15 +45,16 @@ class ReelServiceProvider extends ServiceProvider
             __DIR__ . '/../Resources/lang' => resource_path('lang/vendor/reel'),
         ], 'reel-translations');
 
-        $this->app['events']->listen(BuildSchemaString::class, function (BuildSchemaString $event) {
-            $schemaPath = __DIR__ . '/../graphql/schema.graphql';
+        // $this->app['events']->listen(BuildSchemaString::class, function (BuildSchemaString $event) {
+        //     $schemaPath = __DIR__ . '/../graphql/schema.graphql';
 
-            if (file_exists($schemaPath)) {
-                return file_get_contents($schemaPath);
-            }
+        //     dd($schemaPath);
+        //     if (file_exists($schemaPath)) {
+        //         return file_get_contents($schemaPath);
+        //     }
 
-            return '';
-        });
+        //     return '';
+        // });
     }
 
     /**

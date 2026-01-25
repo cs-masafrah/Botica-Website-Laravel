@@ -1,0 +1,11 @@
+# Import the main Bagisto GraphQL API schema
+#import ../vendor/bagisto/graphql-api/src/graphql/schema.graphql
+
+# Import Product package schema
+# import ../packages/Webkul/Product/GraphQL/schema.graphql
+
+# Import Reel package schema
+#import ../packages/Webkul/Reel/src/GraphQL/schema.graphql
+
+# You can also add custom schemas here
+# import ./custom/*.graphql

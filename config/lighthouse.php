@@ -98,7 +98,8 @@ return [
     |
     */
 
-    'schema_path' => base_path('vendor/bagisto/graphql-api/src/graphql/schema.graphql'),
+    // 'schema_path' => base_path('vendor/bagisto/graphql-api/src/graphql/schema.graphql'),
+    'schema_path' => base_path('graphql/schema.graphql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -216,12 +217,12 @@ return [
         'scalars'       => 'Webkul\\GraphQLAPI\\Scalars',
         'types'         => [
             'Webkul\\GraphQLAPI\\Types',
-            'Webkul\\Product\\GraphQL\\Types', // Add this
+            // 'Webkul\\Product\\GraphQL\\Types', // Add this
         ],
 
         'queries' => [
             'Webkul\\GraphQLAPI\\Queries',
-            'Webkul\\Product\\GraphQL\\Queries', // Add this
+            // 'Webkul\\Product\\GraphQL\\Queries', // Add this
         ],
 
         'mutations' => [
