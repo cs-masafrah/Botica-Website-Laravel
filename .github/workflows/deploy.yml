@@ -36,11 +36,10 @@ jobs:
           git pull origin main
           composer install --no-dev --optimize-autoloader
           php artisan migrate --force
+          sudo chown -R www-data:www-data storage bootstrap/cache
+          sudo chmod -R 775 storage bootstrap/cache
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
           php artisan optimize:clear
-          chown -R www-data:www-data storage bootstrap/cache
-          chmod -R 775 storage bootstrap/cache
           systemctl reload apache2
-          php artisan lighthouse:validate-schema
