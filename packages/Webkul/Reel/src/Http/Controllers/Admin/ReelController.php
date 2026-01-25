@@ -126,9 +126,10 @@ class ReelController extends Controller
         // $reel = $this->reelRepository->findOrFail($id);
         $products = $this->productRepository->all();
         // Map video URL fully qualified
-        $reel->video_url = $reel->video_path ? asset('storage/' . $reel->video_path) : null;
+        // $reel->video_url = $reel->video_path ? asset('storage/' . $reel->video_path) : null;
         // Map video URL fully qualified
-        $reel->thumbnail_path = $reel->thumbnail_path ? asset('storage/' . $reel->thumbnail_path) : null;
+        // $reel->thumbnail_path = $reel->thumbnail_path ? asset('storage/' . $reel->thumbnail_path) : null;
+
         return response()->json([
             'data' => $reel,
             'products' => $products,
