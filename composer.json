@@ -100,7 +100,9 @@
             "Webkul\\Tax\\": "packages/Webkul/Tax/src",
             "Webkul\\Theme\\": "packages/Webkul/Theme/src",
             "Webkul\\User\\": "packages/Webkul/User/src",
-            "Webkul\\Reel\\": "packages/Webkul/Reel/src"
+            "Webkul\\Reel\\": "packages/Webkul/Reel/src",
+            "Webkul\\AlQudsShipping\\": "packages/Webkul/AlQudsShipping/src",
+            "Webkul\\ILShipping\\": "packages/Webkul/ILShipping/src"
         }
     },
     "autoload-dev": {
@@ -132,13 +134,15 @@
             ]
         }
     },
-    "repositories": [{
-        "type": "path",
-        "url": "packages/*/*",
-        "options": {
-            "symlink": true
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*/*",
+            "options": {
+                "symlink": true
+            }
         }
-    }],
+    ],
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
