@@ -46,5 +46,7 @@ return [
     Webkul\Reel\Providers\ReelServiceProvider::class,
     Webkul\Product\Providers\GraphQLServiceProvider::class,
     Webkul\Product\Providers\GraphQLNamespaceServiceProvider::class,
+    Webkul\AlQudsShipping\Providers\AlQudsShippingServiceProvider::class,
+    Webkul\ILShipping\Providers\ILShippingServiceProvider::class,
 
 ];
