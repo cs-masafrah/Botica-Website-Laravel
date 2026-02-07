@@ -54,6 +54,10 @@ class AbandonedCartServiceProvider extends ServiceProvider
         // $this->publishes([
         //     __DIR__ . '/../Resources/lang' => resource_path('lang/vendor/admin'),
         // ], 'abandoned-cart-lang');
+
+        // Load translations
+        $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'abandonedcart');
+
     }
 
     /**
