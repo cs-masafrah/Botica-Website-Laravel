@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a01cec94e3e3acc7af2dad3763c245e6",
+    "content-hash": "7c187c9a1134d9103dea48b520eff473",
     "packages": [
         {
             "name": "astrotomic/laravel-translatable",
@@ -90,6 +90,64 @@
                 }
             ],
             "time": "2025-07-09T14:05:02+00:00"
+        },
+        {
+            "name": "bagisto-eu/stock-notify",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bagisto-europe/bagisto-stock-notify.git",
+                "reference": "463f586763efc6abbdc6c65acd4d740cefb5f2cd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bagisto-europe/bagisto-stock-notify/zipball/463f586763efc6abbdc6c65acd4d740cefb5f2cd",
+                "reference": "463f586763efc6abbdc6c65acd4d740cefb5f2cd",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3|^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Bagisto\\StockNotify\\Providers\\StockNotifyServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bagisto\\StockNotify\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bagisto Europe",
+                    "email": "info@bagisto.eu",
+                    "homepage": "https://bagisto.eu"
+                }
+            ],
+            "description": "Receive email reports for low inventory stock",
+            "keywords": [
+                "bagisto",
+                "ecommerce",
+                "export",
+                "inventory",
+                "laravel",
+                "mail"
+            ],
+            "support": {
+                "docs": "https://github.com/bagisto-europe/stock-notify",
+                "forum": "https://forums.bagisto.com",
+                "issues": "https://github.com/bagisto-europe/stock-notify/issues",
+                "source": "https://github.com/bagisto-europe/stock-notify"
+            },
+            "time": "2024-06-28T20:15:23+00:00"
         },
         {
             "name": "bagisto/bagisto-package-generator",
