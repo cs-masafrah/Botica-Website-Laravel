@@ -48,5 +48,7 @@ return [
     Webkul\Product\Providers\GraphQLNamespaceServiceProvider::class,
     Webkul\AlQudsShipping\Providers\AlQudsShippingServiceProvider::class,
     Webkul\ILShipping\Providers\ILShippingServiceProvider::class,
+    Webkul\AbandonedCart\Providers\AbandonedCartServiceProvider::class,
+
 
 ];
