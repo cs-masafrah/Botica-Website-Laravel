@@ -21,7 +21,8 @@ jobs:
         ini-values: post_max_size=256M, upload_max_filesize=256M, max_execution_time=300
 
     - name: Install dependencies
-      run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts
+
 
     - name: Deploy to server
       if: success()
