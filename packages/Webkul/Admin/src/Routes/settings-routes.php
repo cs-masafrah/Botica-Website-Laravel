@@ -182,6 +182,8 @@ Route::prefix('settings')->group(function () {
         Route::post('mass-update', 'massUpdate')->name('admin.settings.themes.mass_update');
 
         Route::post('mass-delete', 'massDestroy')->name('admin.settings.themes.mass_delete');
+        // In routes/admin.php
+        Route::post('sort', 'sort')->name('admin.settings.themes.sort');
     });
 
     /**

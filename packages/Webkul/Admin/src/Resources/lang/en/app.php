@@ -3442,6 +3442,10 @@ return [
             'index' => [
                 'create-btn' => 'Create Theme',
                 'title'      => 'Themes',
+                'save-sort-order' => 'Save Sort Order',
+                'saving' => 'Saving...',
+                'sort-order-saved' => 'Sort order saved successfully!',
+                'sort-order-error' => 'Error saving sort order. Please try again.',
 
                 'datagrid' => [
                     'active'        => 'Active',
