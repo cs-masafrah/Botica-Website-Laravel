@@ -76,6 +76,8 @@ return [
                 'error-occurred'          => 'حدث خطأ ما',
                 'load-failed'             => 'فشل تحميل بيانات الريل',
                 'video-optional'          => ' (اختياري عند التحديث)',
+                'sort-order-saved' => 'تم حفظ ترتيب الفرز بنجاح',
+                'save-sort-order' => 'حفظ ترتيب الفرز',
             ],
 
             'datagrid' => [

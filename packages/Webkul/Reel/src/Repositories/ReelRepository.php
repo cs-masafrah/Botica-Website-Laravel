@@ -13,4 +13,11 @@ class ReelRepository extends Repository
     {
         return 'Webkul\Reel\Contracts\Reel';
     }
+
+    public function updateSortOrder($id, $sortOrder)
+    {
+        return $this->model->where('id', $id)->update([
+            'sort_order' => $sortOrder
+        ]);
+    }
 }
