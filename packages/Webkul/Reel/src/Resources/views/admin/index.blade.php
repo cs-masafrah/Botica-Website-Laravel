@@ -1,32 +1,54 @@
 <x-admin::layouts>
     <x-slot:title>
         @lang('reel::app.admin.reels.title')
-    </x-slot>
+        </x-slot>
 
-    {!! view_render_event('bagisto.admin.reels.create.before') !!}
+        {!! view_render_event('bagisto.admin.reels.create.before') !!}
 
-    <v-reels>
-        <!-- DataGrid Shimmer will show while loading -->
-        <x-admin::datagrid :src="route('admin.reel.index')" ref="datagrid" />
-    </v-reels>
+        <v-reels>
+            <x-admin::datagrid :src="route('admin.reel.index')" ref="datagrid" />
+        </v-reels>
 
-    {!! view_render_event('bagisto.admin.reels.create.after') !!}
+        {!! view_render_event('bagisto.admin.reels.create.after') !!}
 
-    @pushOnce('scripts')
-    <script type="text/x-template" id="v-reels-template">
-        <div>
-            <!-- Header with Create Button -->
+        @pushOnce('scripts')
+        <!-- Sortable.js Library -->
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+        <script type="text/x-template" id="v-reels-template">
+            <div>
+            <!-- Header with Create and Save Sort Order Buttons -->
             <div class="flex items-center justify-between gap-4 mb-4 max-sm:flex-wrap">
                 <p class="text-xl font-bold text-gray-800 dark:text-white">
                     @lang('reel::app.admin.reels.title')
                 </p>
 
                 <div class="flex items-center gap-x-2.5">
+                    <!-- Save Sort Order Button (shown when order changes) -->
+                    <button
+                        v-if="showSaveButton"
+                        type="button"
+                        class="secondary-button"
+                        @click="saveSortOrder"
+                        :disabled="isSaving"
+                    >
+                        <span v-if="isSaving">
+                            <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                        <span v-else>
+                            @lang('reel::app.admin.reels.messages.save-sort-order')
+                        </span>
+                    </button>
+
+                    <!-- Create Button -->
                     @if (bouncer()->hasPermission('reel.create'))
                         <button
                             type="button"
                             class="primary-button"
-                            @click="resetForm(); $refs.reelUpdateOrCreateModal.toggle()"
+                            @click="openCreateModal"
                         >
                             @lang('reel::app.admin.reels.create.title')
                         </button>
@@ -35,91 +57,109 @@
             </div>
 
             <!-- DataGrid -->
-            <x-admin::datagrid
-                :src="route('admin.reel.index')"
-                ref="datagrid"
-            >
-                <!-- DataGrid Header -->
-                <template #header>
-                    <div
-                        class="grid px-4 py-3 font-medium border-b row bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
-                        style="grid-template-columns: repeat(10, minmax(0, 1fr))"
-                    >
-                        <p>ID</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.title')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.caption')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.product')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.duration')</p>
-                        <p>@lang('reel::app.admin.reels.fields.status')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.views')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.likes')</p>
-                        <p>@lang('reel::app.admin.reels.datagrid.sort_order')</p>
-                        <p class="text-right">@lang('reel::app.admin.reels.datagrid.actions')</p>
-                    </div>
-                </template>
-
-                <!-- DataGrid Body -->
-                <template #body="{ isLoading, available, performAction }">
-                    <template v-if="isLoading">
-                        <x-admin::shimmer.datagrid.table.body />
-                    </template>
-
-                    <template v-else>
+            <div ref="datagridContainer">
+                <x-admin::datagrid
+                    :src="route('admin.reel.index')"
+                    ref="datagrid"
+                    @reload="initializeSortable"
+                >
+                    <!-- DataGrid Header -->
+                    <template #header>
                         <div
-                            v-for="record in available.records"
-                            class="row grid items-center gap-2.5 border-b px-4 py-4 dark:border-gray-800"
-                            style="grid-template-columns: repeat(10, minmax(0, 1fr))"
+                            class="grid px-4 py-3 font-medium border-b row bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                            :style="gridTemplateColumns"
                         >
-                            <p>@{{ record.id }}</p>
-                            <p>@{{ record.title }}</p>
-                            <p class="max-w-xs truncate">@{{ record.caption }}</p>
-                            <p v-if="record.product_name">@{{ record.product_name }}</p>
-                            <p v-else>@lang('reel::app.admin.reels.datagrid.na')</p>
-                            <p>@{{ record.duration }}s</p>
-                            <span v-if="console.log(record.is_active)"></span>
-                           <span
-  :class="[
-    'px-2 py-1 rounded-md text-xs',
-    record.is_active === 'Active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800'
-  ]"
->
-  @{{ record.is_active === 'Active' ? 'Active' : 'Inactive' }}
-</span>
-
-                            <p>@{{ record.views_count }}</p>
-                            <p>@{{ record.likes_count }}</p>
-                            <p>@{{ record.sort_order }}</p>
-                            <div class="flex justify-end gap-2">
-                                <!-- Edit Button - Opens Edit Modal -->
-                                @if (bouncer()->hasPermission('reel.edit'))
-                                    <a
-                                        v-if="record.actions && record.actions.find(a => a.index === 'edit')"
-                                        @click="editReel(record.id)"
-                                        class="cursor-pointer"
-                                        title="Edit"
-                                    >
-                                        <span class="text-2xl text-blue-600 icon-edit hover:text-blue-800"></span>
-                                    </a>
-                                @endif
-
-                                <!-- Delete Button - Uses Datagrid's performAction -->
-                                 @if (bouncer()->hasPermission('reel.delete'))
-                                <a
-                                    v-if="record.actions && record.actions.find(a => a.index === 'delete')"
-                                    @click="performAction(record.actions.find(a => a.index === 'delete'))"
-                                    class="cursor-pointer"
-                                    title="Delete"
-                                >
-                                    <span class="text-2xl text-red-600 icon-delete hover:text-red-800"></span>
-                                </a>
-                                 @endif
-                            </div>
+                            <p class="flex items-center gap-2">
+                                <span class="w-4 drag-handle-placeholder"></span>
+                                ID
+                            </p>
+                            <p>@lang('reel::app.admin.reels.datagrid.title')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.caption')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.product')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.duration')</p>
+                            <p>@lang('reel::app.admin.reels.fields.status')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.views')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.likes')</p>
+                            <p>@lang('reel::app.admin.reels.datagrid.sort_order')</p>
+                            <p class="text-right">@lang('reel::app.admin.reels.datagrid.actions')</p>
                         </div>
                     </template>
-                </template>
-            </x-admin::datagrid>
+
+                    <!-- DataGrid Body -->
+                    <template #body="{ isLoading, available, performAction }">
+                        <template v-if="isLoading">
+                            <x-admin::shimmer.datagrid.table.body />
+                        </template>
+
+                        <template v-else>
+                            <div
+                                ref="sortableContainer"
+                                class="sortable-container"
+                            >
+                                <div
+                                    v-for="record in available.records"
+                                    :key="record.id"
+                                    :data-id="record.id"
+                                    class="row grid items-center gap-2.5 border-b px-4 py-4 dark:border-gray-800 sortable-item"
+                                    :style="gridTemplateColumns"
+                                >
+                                    <p class="flex items-center gap-2">
+                                        <span class="text-gray-400 cursor-move drag-handle hover:text-gray-600 dark:hover:text-gray-300">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                            </svg>
+                                        </span>
+                                        @{{ record.id }}
+                                    </p>
+                                    <p>@{{ record.title }}</p>
+                                    <p class="max-w-xs truncate">@{{ record.caption }}</p>
+                                    <p v-if="record.product_name">@{{ record.product_name }}</p>
+                                    <p v-else>@lang('reel::app.admin.reels.datagrid.na')</p>
+                                    <p>@{{ record.duration }}s</p>
+                                    <span
+                                        :class="[
+                                            'px-2 py-1 rounded-md text-xs',
+                                            record.is_active === 'Active'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                        ]"
+                                    >
+                                        @{{ record.is_active === 'Active' ? 'Active' : 'Inactive' }}
+                                    </span>
+                                    <p>@{{ record.views_count }}</p>
+                                    <p>@{{ record.likes_count }}</p>
+                                    <p>@{{ record.sort_order }}</p>
+                                    <div class="flex justify-end gap-2">
+                                        <!-- Edit Button -->
+                                        @if (bouncer()->hasPermission('reel.edit'))
+                                            <a
+                                                v-if="record.actions && record.actions.find(a => a.index === 'edit')"
+                                                @click="editReel(record.id)"
+                                                class="cursor-pointer"
+                                                title="Edit"
+                                            >
+                                                <span class="text-2xl text-blue-600 icon-edit hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"></span>
+                                            </a>
+                                        @endif
+
+                                        <!-- Delete Button -->
+                                        @if (bouncer()->hasPermission('reel.delete'))
+                                            <a
+                                                v-if="record.actions && record.actions.find(a => a.index === 'delete')"
+                                                @click="performAction(record.actions.find(a => a.index === 'delete'))"
+                                                class="cursor-pointer"
+                                                title="Delete"
+                                            >
+                                                <span class="text-2xl text-red-600 icon-delete hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"></span>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </x-admin::datagrid>
+            </div>
 
             <!-- Video Preview Modal -->
             <x-admin::modal ref="videoPreviewModal">
@@ -332,6 +372,7 @@
                                     v-model="reel.sort_order"
                                     placeholder="@lang('reel::app.admin.reels.fields.sort_order')"
                                     min="0"
+                                    disabled
                                 />
                                 <x-admin::form.control-group.error control-name="sort_order" />
                             </x-admin::form.control-group>
@@ -361,8 +402,8 @@
         </div>
     </script>
 
-    <script type="module">
-        app.component('v-reels', {
+        <script type="module">
+            app.component('v-reels', {
             template: '#v-reels-template',
 
             data() {
@@ -379,50 +420,110 @@
                         sort_order: 0,
                     },
                     products: [],
+                    productsLoading: false,
                     previewVideoUrl: '',
                     isLoading: false,
-                    productsLoading: false,
+                    isSaving: false,
+                    showSaveButton: false,
+                    sortableInstance: null,
+                    originalOrder: [],
+                    currentOrder: [],
+                }
+            },
+
+            computed: {
+                gridTemplateColumns() {
+                    return 'grid-template-columns: repeat(10, minmax(0, 1fr))';
                 }
             },
 
             mounted() {
                 this.fetchProducts();
+                setTimeout(() => {
+                    this.initializeSortable();
+                }, 500);
             },
 
             methods: {
                 async fetchProducts() {
                     this.productsLoading = true;
                     try {
-                        // Since your edit method returns products in the response, we can use that
-                        // Or create a separate endpoint. For now, we'll fetch from edit endpoint with a dummy ID
-                        // You might want to create a dedicated products endpoint in your controller
+                        const response = await this.$axios.get('{{ route("admin.reel.get_products") }}');
 
-                        // Option 1: Use existing edit route with dummy ID (not recommended)
-                        // Option 2: Create a new method in your controller
-
-                        // For now, let's use a workaround - we'll get products when we open edit modal
-                        // Or you can add this method to your controller:
-                        this.products = [];
-
-                        // If you want to load products initially, add this method to your controller:
-                        /*
-                        public function getProducts()
-                        {
-                            $products = $this->productRepository->all(['id', 'name']);
-                            return response()->json([
-                                'data' => $products
-                            ]);
+                        if (response.data.success) {
+                            this.products = response.data.data || [];
+                            console.log('Products loaded:', this.products.length);
+                        } else {
+                            console.error('Error fetching products:', response.data.message);
+                            this.products = [];
                         }
-                        */
-
-                        // And add route: Route::get('reels/products', [ReelController::class, 'getProducts'])->name('admin.reel.products');
-
                     } catch (error) {
                         console.error('Error fetching products:', error);
                         this.products = [];
                     } finally {
                         this.productsLoading = false;
                     }
+                },
+
+                // Calculate next sort order from current records
+                calculateNextSortOrder() {
+                    // Get all rows from the datagrid
+                    const rows = document.querySelectorAll('.sortable-item');
+                    let maxSortOrder = 0;
+
+                    if (rows.length > 0) {
+                        // Extract sort orders from visible rows
+                        rows.forEach(row => {
+                            const cells = row.children;
+                            if (cells.length > 8) {
+                                const sortOrderCell = cells[8];
+                                const sortOrder = parseInt(sortOrderCell.textContent) || 0;
+                                if (sortOrder > maxSortOrder) {
+                                    maxSortOrder = sortOrder;
+                                }
+                            }
+                        });
+                    }
+
+                    return maxSortOrder + 1;
+                },
+
+                // Open create modal with auto-calculated sort order
+                openCreateModal() {
+                    // Calculate next sort order
+                    const nextSortOrder = this.calculateNextSortOrder();
+
+                    this.reel = {
+                        id: null,
+                        title: '',
+                        caption: '',
+                        product_id: null,
+                        video_url: '',
+                        thumbnail_url: '',
+                        duration: 0,
+                        is_active: 1,
+                        sort_order: nextSortOrder, // Auto-set to next number
+                    };
+
+                    console.log('Auto-calculated sort order:', nextSortOrder);
+
+                    // Fetch products if not already loaded
+                    if (this.products.length === 0) {
+                        this.fetchProducts();
+                    }
+
+                    // Clear file inputs
+                    if (this.$refs.videoInput) {
+                        this.$refs.videoInput.value = '';
+                    }
+
+                    const thumbnailInput = document.querySelector('input[name="thumbnail"]');
+                    if (thumbnailInput) {
+                        thumbnailInput.value = '';
+                    }
+
+                    // Open modal
+                    this.$refs.reelUpdateOrCreateModal.toggle();
                 },
 
                 async createOrUpdate(params, { resetForm, setErrors }) {
@@ -434,7 +535,7 @@
                     formData.append('title', this.reel.title);
                     formData.append('caption', this.reel.caption);
 
-                    // Add product_id if exists (null is fine)
+                    // Add product_id if exists
                     if (this.reel.product_id !== undefined && this.reel.product_id !== null) {
                         formData.append('product_id', this.reel.product_id);
                     }
@@ -480,8 +581,8 @@
                             type: 'success',
                             message: response.data.message || 'Operation successful'
                         });
+
                         this.$refs.datagrid.get();
-                        this.resetForm();
                     } catch (error) {
                         console.error('Error:', error);
                         if (error.response?.status === 422) {
@@ -498,24 +599,19 @@
                 },
 
                 async editReel(reelId) {
-                    console.log('Editing reel ID:', reelId);
-
                     const url = "{{ route('admin.reel.edit', ['reel' => '__ID__']) }}".replace('__ID__', reelId);
 
                     try {
                         const response = await this.$axios.get(url);
-                        console.log('Edit response:', response.data);
-
                         const data = response.data.data || response.data;
-                        const products = response.data.products || [];
 
                         if (!data) {
                             throw new Error('No data received from server');
                         }
 
-                        // Set products if returned from edit endpoint
-                        if (products.length > 0) {
-                            this.products = products;
+                        // If products are not loaded yet, fetch them
+                        if (this.products.length === 0) {
+                            await this.fetchProducts();
                         }
 
                         this.reel = {
@@ -530,12 +626,9 @@
                             sort_order: data.sort_order || 0,
                         };
 
-                        console.log('Reel data set:', this.reel);
                         this.$refs.reelUpdateOrCreateModal.toggle();
                     } catch (error) {
                         console.error('Edit error details:', error);
-                        console.error('Error response:', error.response);
-
                         let errorMessage = 'Failed to load reel data';
                         if (error.response?.status === 404) {
                             errorMessage = 'Reel not found';
@@ -547,6 +640,121 @@
                             type: 'error',
                             message: errorMessage
                         });
+                    }
+                },
+
+                initializeSortable() {
+                    const container = this.$refs.sortableContainer;
+                    if (!container || this.sortableInstance) {
+                        return;
+                    }
+
+                    // Destroy existing instance
+                    if (this.sortableInstance) {
+                        this.sortableInstance.destroy();
+                    }
+
+                    // Initialize Sortable
+                    this.sortableInstance = new Sortable(container, {
+                        animation: 150,
+                        handle: '.drag-handle',
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-drag',
+                        onStart: () => {
+                            this.originalOrder = this.getCurrentOrder();
+                            document.body.classList.add('dragging-active');
+                        },
+                        onUpdate: () => {
+                            this.currentOrder = this.getCurrentOrder();
+                            this.showSaveButton = !this.areOrdersEqual(this.originalOrder, this.currentOrder);
+                            this.updateSortOrderDisplay();
+                        },
+                        onEnd: () => {
+                            document.body.classList.remove('dragging-active');
+                        }
+                    });
+
+                    // Store initial order
+                    this.originalOrder = this.getCurrentOrder();
+                    this.currentOrder = [...this.originalOrder];
+                },
+
+                getCurrentOrder() {
+                    const container = this.$refs.sortableContainer;
+                    if (!container) return [];
+
+                    const items = container.querySelectorAll('.sortable-item');
+                    return Array.from(items).map(item => {
+                        const id = item.getAttribute('data-id');
+                        return id ? parseInt(id) : null;
+                    }).filter(id => id !== null);
+                },
+
+                areOrdersEqual(order1, order2) {
+                    if (order1.length !== order2.length) return false;
+                    return order1.every((id, index) => id === order2[index]);
+                },
+
+                updateSortOrderDisplay() {
+                    const container = this.$refs.sortableContainer;
+                    if (!container) return;
+
+                    const items = container.querySelectorAll('.sortable-item');
+                    items.forEach((item, index) => {
+                        // Find sort order cell (assuming it's the 9th cell, index 8)
+                        const cells = item.children;
+                        if (cells.length > 8) {
+                            const sortOrderCell = cells[8];
+                            if (sortOrderCell) {
+                                sortOrderCell.textContent = index + 1;
+                            }
+                        }
+                    });
+                },
+
+                async saveSortOrder() {
+                    this.isSaving = true;
+
+                    try {
+                        const sortData = this.currentOrder.map((id, index) => ({
+                            id: id,
+                            sort_order: index + 1
+                        }));
+
+                        const response = await this.$axios.post('{{ route("admin.reel.sort") }}', {
+                            sort_order: sortData
+                        });
+
+                        this.$emitter.emit('add-flash', {
+                            type: 'success',
+                            message: response.data.message || 'Sort order saved successfully!'
+                        });
+
+                        this.showSaveButton = false;
+
+                        // Reset and refresh datagrid
+                        this.sortableInstance.destroy();
+                        this.sortableInstance = null;
+                        this.originalOrder = [];
+                        this.currentOrder = [];
+
+                        // Refresh datagrid
+                        await this.$refs.datagrid.get();
+
+                        // Reinitialize sortable after data loads
+                        setTimeout(() => {
+                            this.initializeSortable();
+                        }, 500);
+
+                    } catch (error) {
+                        console.error('Error saving sort order:', error);
+                        this.$emitter.emit('add-flash', {
+                            type: 'error',
+                            message: error.response?.data?.message || 'Failed to save sort order'
+                        });
+                    } finally {
+                        this.isSaving = false;
                     }
                 },
 
@@ -630,34 +838,99 @@
                 previewVideo(videoUrl) {
                     this.previewVideoUrl = videoUrl;
                     this.$refs.videoPreviewModal.toggle();
-                },
-
-                resetForm() {
-                    this.reel = {
-                        id: null,
-                        title: '',
-                        caption: '',
-                        product_id: null,
-                        video_url: '',
-                        thumbnail_url: '',
-                        duration: 0,
-                        is_active: 1,
-                        sort_order: 0,
-                    };
-
-                    // Reset file inputs
-                    if (this.$refs.videoInput) {
-                        this.$refs.videoInput.value = '';
-                    }
-
-                    // Find and reset thumbnail input
-                    const thumbnailInput = document.querySelector('input[name="thumbnail"]');
-                    if (thumbnailInput) {
-                        thumbnailInput.value = '';
-                    }
                 }
             }
         });
     </script>
-    @endPushOnce
+
+        <style>
+            /* Drag & Drop Styles */
+            .sortable-ghost {
+                opacity: 0.4;
+                background-color: #f3f4f6 !important;
+            }
+
+            .dark .sortable-ghost {
+                background-color: #374151 !important;
+            }
+
+            .sortable-chosen {
+                background-color: #f9fafb !important;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+
+            .dark .sortable-chosen {
+                background-color: #1f2937 !important;
+            }
+
+            .sortable-drag {
+                opacity: 0.9;
+                background-color: white !important;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                z-index: 9999 !important;
+            }
+
+            .dark .sortable-drag {
+                background-color: #111827 !important;
+            }
+
+            .drag-handle {
+                cursor: move !important;
+                user-select: none;
+                transition: all 0.2s;
+            }
+
+            .drag-handle:hover {
+                color: #6b7280 !important;
+                transform: scale(1.1);
+            }
+
+            .dark .drag-handle:hover {
+                color: #d1d5db !important;
+            }
+
+            .dragging-active {
+                cursor: grabbing !important;
+            }
+
+            .dragging-active * {
+                cursor: grabbing !important;
+            }
+
+            /* Row hover effect */
+            .row:hover {
+                background-color: #f9fafb;
+            }
+
+            .dark .row:hover {
+                background-color: #1f2937;
+            }
+
+            /* Action buttons */
+            .icon-edit,
+            .icon-delete {
+                margin: 0 4px;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.2s;
+            }
+
+            .icon-edit:hover {
+                background-color: rgba(59, 130, 246, 0.1);
+                color: #3b82f6;
+            }
+
+            .icon-delete:hover {
+                background-color: rgba(239, 68, 68, 0.1);
+                color: #ef4444;
+            }
+
+            /* Header drag handle placeholder */
+            .drag-handle-placeholder {
+                display: inline-block;
+                visibility: hidden;
+            }
+
+        </style>
+        @endPushOnce
 </x-admin::layouts>

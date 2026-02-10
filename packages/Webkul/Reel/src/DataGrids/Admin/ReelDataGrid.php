@@ -13,23 +13,6 @@ class ReelDataGrid extends DataGrid
      */
     public function prepareQueryBuilder()
     {
-        // Select all relevant columns from reels table
-        // $queryBuilder = DB::table('reels')
-        //     ->select(
-        //         'id',
-        //         'title',
-        //         'caption',
-        //         'video_path',
-        //         'thumbnail_path',
-        //         'duration',
-        //         'is_active',
-        //         'sort_order',
-        //         'views_count',
-        //         'likes_count',
-        //         'created_by',
-        //         'product_id',
-        //     );
-
         $locale = app()->getLocale();
 
         $queryBuilder = DB::table('reels')
@@ -38,37 +21,53 @@ class ReelDataGrid extends DataGrid
                 $join->on('reels.product_id', '=', 'product_flat.product_id')
                     ->where('product_flat.locale', '=', $locale);
             })
-
             ->select(
                 'reels.id',
+                'reels.sort_order',
                 'reels.title',
                 'reels.caption',
                 'reels.video_path',
                 'reels.thumbnail_path',
                 'reels.duration',
                 'reels.is_active',
-                'reels.sort_order',
                 'reels.views_count',
                 'reels.likes_count',
                 'reels.created_by',
                 'admins.name as created_by_name',
                 'reels.product_id',
-                'product_flat.name as product_name',  // <-- singular here!
+                'product_flat.name as product_name',
                 'reels.created_at',
                 'reels.updated_at',
                 'reels.deleted_at'
-            );
-
-        // dd($queryBuilder->get());
+            )
+            ->orderBy('reels.sort_order', 'asc'); // Sort by sort_order
 
         return $queryBuilder;
     }
-
     /**
      * Prepare columns.
      */
     public function prepareColumns()
     {
+        // Add drag handle column as FIRST column
+        $this->addColumn([
+            'index'      => 'drag_handle',
+            'label'      => ' ',
+            'type'       => 'string',
+            'searchable' => false,
+            'filterable' => false,
+            'sortable'   => false,
+            'width'      => '50px',
+            'closure'    => function ($row) {
+                return '<div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 p-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                </div>';
+            },
+        ]);
+
+        // Rest of your columns...
         $this->addColumn([
             'index'      => 'id',
             'label'      => trans('reel::app.admin.reels.datagrid.id'),

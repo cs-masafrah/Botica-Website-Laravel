@@ -76,6 +76,8 @@ return [
                 'error-occurred'          => 'Something went wrong',
                 'load-failed'             => 'Failed to load reel data',
                 'video-optional'          => '(Optional when updating)',
+                'sort-order-saved' => 'Sort order saved successfully',
+                'save-sort-order' => 'Save Sort Order',
             ],
 
             'datagrid' => [

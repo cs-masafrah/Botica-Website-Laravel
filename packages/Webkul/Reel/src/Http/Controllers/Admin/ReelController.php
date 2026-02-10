@@ -34,7 +34,7 @@ class ReelController extends Controller
         if (! bouncer()->hasPermission('reel') && ! bouncer()->hasPermission('reel.list')) {
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
-        // dd(trans('reel::app.admin.reels.messages.create-success'));
+
         if (request()->ajax()) {
             return datagrid(ReelDataGrid::class)->process();
         }
@@ -56,7 +56,6 @@ class ReelController extends Controller
         return view('reel::admin.create', compact('products'));
     }
 
-
     /**
      * Store a newly created reel.
      */
@@ -65,6 +64,7 @@ class ReelController extends Controller
         if (! bouncer()->hasPermission('reel.create')) {
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
+
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'caption'      => 'nullable|string',
@@ -85,6 +85,14 @@ class ReelController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('reels/thumbnails', 'public');
         }
 
+        // Calculate sort order if not provided
+        $sortOrder = $validated['sort_order'] ?? 0;
+        if ($sortOrder == 0) {
+            // Get the maximum sort_order from database
+            $maxSortOrder = \DB::table('reels')->max('sort_order');
+            $sortOrder = ($maxSortOrder ?: 0) + 1;
+        }
+
         $this->reelRepository->create([
             'title'          => $validated['title'],
             'caption'        => $validated['caption'] ?? null,
@@ -92,7 +100,7 @@ class ReelController extends Controller
             'video_path'     => $videoPath,
             'thumbnail_path' => $thumbnailPath,
             'duration'       => $validated['duration'] ?? null,
-            'sort_order'     => $validated['sort_order'] ?? 0,
+            'sort_order'     => $sortOrder, // Use calculated sort order
             'is_active'      => $validated['is_active'] ?? true,
             'created_by'     => auth()->guard('admin')->id(),
         ]);
@@ -123,24 +131,23 @@ class ReelController extends Controller
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
 
-        // $reel = $this->reelRepository->findOrFail($id);
         $products = $this->productRepository->all();
-        // Map video URL fully qualified
-        // $reel->video_url = $reel->video_path ? asset('storage/' . $reel->video_path) : null;
-        // Map video URL fully qualified
-        // $reel->thumbnail_path = $reel->thumbnail_path ? asset('storage/' . $reel->thumbnail_path) : null;
 
         return response()->json([
             'data' => $reel,
             'products' => $products,
         ]);
     }
+
+    /**
+     * Update the specified reel.
+     */
     public function update(Request $request, Reel $reel)
     {
-        // Check if user has RMA permission
         if (! bouncer()->hasPermission('reel.edit')) {
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
+
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'caption'      => 'nullable|string',
@@ -195,5 +202,90 @@ class ReelController extends Controller
         return new JsonResponse([
             'message' => trans('reel::app.admin.reels.messages.delete-success'),
         ]);
+    }
+
+    /**
+     * Save sort order from drag & drop.
+     */
+    public function sort(Request $request): JsonResponse
+    {
+        if (! bouncer()->hasPermission('reel.edit')) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('reel::app.admin.reels.messages.unauthorized')
+            ], 401);
+        }
+
+        try {
+            // Get the sort_order data
+            $sortOrder = $request->input('sort_order');
+
+            // If it's a string, decode it
+            if (is_string($sortOrder)) {
+                $sortOrder = json_decode($sortOrder, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new \Exception('Invalid JSON format for sort_order');
+                }
+            }
+
+            // Validate the data
+            $validator = \Validator::make(['sort_order' => $sortOrder], [
+                'sort_order' => 'required|array',
+                'sort_order.*.id' => 'required|exists:reels,id',
+                'sort_order.*.sort_order' => 'required|integer|min:1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Process updates
+            foreach ($sortOrder as $item) {
+                \DB::table('reels')
+                    ->where('id', $item['id'])
+                    ->update(['sort_order' => $item['sort_order']]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => trans('reel::app.admin.reels.messages.sort-order-saved')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get products for dropdown.
+     */
+    public function getProducts()
+    {
+        try {
+            // Get all products with id and name
+            $products = $this->productRepository->all();
+
+            return response()->json([
+                'success' => true,
+                'data' => $products->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
