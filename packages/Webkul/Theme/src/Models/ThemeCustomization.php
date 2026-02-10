@@ -102,4 +102,11 @@ class ThemeCustomization extends TranslatableModel implements ThemeCustomization
     {
         return ThemeFactory::new();
     }
+
+    protected static function booted()
+    {
+        static::addGlobalScope('sort', function ($builder) {
+            $builder->orderBy('sort_order', 'asc');
+        });
+    }
 }
