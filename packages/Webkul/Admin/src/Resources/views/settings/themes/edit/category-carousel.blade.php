@@ -4,12 +4,9 @@
 
 <!-- Category Carousel Vue Component -->
 @pushOnce('scripts')
-    <script
-        type="text/x-template"
-        id="v-category-carousel-template"
-    >
-        <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
-            <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
+<script type="text/x-template" id="v-category-carousel-template">
+    <div class="flex flex-col flex-1 gap-2 max-xl:flex-auto">
+            <div class="p-4 bg-white rounded box-shadow dark:bg-gray-900">
                 <div class="mb-2.5 flex items-center justify-between gap-x-2.5">
                     <div class="flex flex-col gap-1">
                         <p class="text-base font-semibold text-gray-800 dark:text-white">
@@ -79,7 +76,7 @@
                     <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[options][filters][limit]" />
                 </x-admin::form.control-group>
 
-                <span class="mb-4 mt-4 block w-full border-b dark:border-gray-800"></span>
+                <span class="block w-full mt-4 mb-4 border-b dark:border-gray-800"></span>
 
                 <div class="flex items-center justify-between gap-x-2.5">
                     <div class="flex flex-col gap-1">
@@ -109,10 +106,10 @@
                         type="hidden"
                         :name="'{{ $currentLocale->code }}[options][filters][' + filter.key +']'"
                         :value="filter.value"
-                    > 
-                
+                    >
+
                     <!-- Details -->
-                    <div 
+                    <div
                         class="flex cursor-pointer items-center justify-between gap-2.5 py-5"
                         :class="{
                             'border-b border-slate-300 dark:border-gray-800': index < options.filters.length - 1
@@ -121,7 +118,7 @@
                         <div class="flex gap-2.5">
                             <div class="grid place-content-start gap-1.5">
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    <div> 
+                                    <div>
                                         @{{ "@lang('admin::app.settings.themes.edit.key')".replace(':key', filter.key) }}
                                     </div>
                                 </p>
@@ -129,16 +126,17 @@
                                 <p class="text-gray-600 dark:text-gray-300">
                                     @{{ "@lang('admin::app.settings.themes.edit.value')".replace(':value', filter.value) }}
                                 </p>
+
                             </div>
                         </div>
 
                         <!-- Actions -->
-                        <div class="grid place-content-start gap-1 text-right">
+                        <div class="grid gap-1 text-right place-content-start">
                             <div class="flex items-center gap-x-5">
-                                <p 
-                                    class="cursor-pointer text-red-600 transition-all hover:underline"
+                                <p
+                                    class="text-red-600 transition-all cursor-pointer hover:underline"
                                     @click="remove(filter)"
-                                > 
+                                >
                                     @lang('admin::app.settings.themes.edit.delete')
                                 </p>
                             </div>
@@ -147,12 +145,12 @@
                 </div>
 
                 <!-- Filters Illustration -->
-                <div    
+                <div
                     class="grid justify-center justify-items-center gap-3.5 px-2.5 py-10"
                     v-else
                 >
                     <img
-                        class="h-40 w-40 p-2 dark:mix-blend-exclusion dark:invert"
+                        class="w-40 h-40 p-2 dark:mix-blend-exclusion dark:invert"
                         src="{{ bagisto_asset('images/empty-placeholders/default.svg') }}"
                         alt="@lang('admin::app.settings.themes.edit.category-carousel')"
                     >
@@ -167,7 +165,7 @@
                         </p>
                     </div>
 
-                    <div 
+                    <div
                         class="secondary-button"
                         @click="$refs.categoryFilterModal.toggle()"
                     >
@@ -222,7 +220,7 @@
                                     @lang('admin::app.settings.themes.edit.value-input')
                                 </x-admin::form.control-group.label>
 
-                                <template v-if="filters.applied.type == 'select'">
+                                <template v-if="filters.applied.type == 'select' || filters.applied.code == 'name'">
                                     <x-admin::form.control-group.control
                                         type="select"
                                         name="value"
@@ -230,8 +228,11 @@
                                         :label="trans('admin::app.settings.themes.edit.value-input')"
                                         :placeholder="trans('admin::app.settings.themes.edit.value-input')"
                                     >
+                                        <option value="" disabled selected>
+                                            @lang('admin::app.settings.themes.edit.select')
+                                        </option>
                                         <option
-                                            v-for="option in filters.applied.options"
+                                            v-for="option in (filters.applied.code == 'name' ? categories : filters.applied.options)"
                                             :value="option.id"
                                             :text="option.name"
                                         ></option>
@@ -244,12 +245,12 @@
                                         name="value"
                                         rules="required"
                                         :label="trans('admin::app.settings.themes.edit.value-input')"
-                                        :placeholder="trans('admin::app.settings.themes.edit.value-input')" 
+                                        :placeholder="trans('admin::app.settings.themes.edit.value-input')"
                                     />
-                                   
+
                                     <!-- Hint for parent_id -->
-                                    <p 
-                                        class="mt-1 text-xs text-gray-500" 
+                                    <p
+                                        class="mt-1 text-xs text-gray-500"
                                         v-if="filters.applied.code === 'parent_id' || filters.applied.code === undefined"
                                     >
                                         @lang('admin::app.settings.themes.edit.parent-id-hint')
@@ -265,7 +266,7 @@
                             <!-- Save Button -->
                             <x-admin::button
                                 button-type="submit"
-                                class="primary-button justify-center"
+                                class="justify-center primary-button"
                                 :title="trans('admin::app.settings.themes.edit.save-btn')"
                             />
                         </x-slot>
@@ -275,8 +276,8 @@
         </div>
     </script>
 
-    <script type="module">
-        app.component('v-category-carousel', {
+<script type="module">
+    app.component('v-category-carousel', {
             template: '#v-category-carousel-template',
 
             props: ['errors'],
@@ -284,6 +285,8 @@
             data() {
                 return {
                     options: @json($theme->translate($currentLocale->code)['options'] ?? null),
+
+                    categories: [],
 
                     filters: {
                         available: [
@@ -297,7 +300,7 @@
                                 id: 'name',
                                 code: 'name',
                                 name: '@lang('admin::app.settings.themes.edit.name')',
-                                type: 'text',
+                                type: 'select',
                             },
                             {
                                 id: 'status',
@@ -325,7 +328,7 @@
             created() {
                 if (this.options === null) {
                     this.options = { filters: {} };
-                }   
+                }
 
                 if (! this.options.filters) {
                     this.options.filters = {};
@@ -338,7 +341,7 @@
                         value: this.options.filters[key]
                     }));
             },
-            
+
             methods: {
                 addFilter(params) {
                     this.options.filters.push(params);
@@ -358,8 +361,35 @@
 
                 handleFilter(event) {
                     this.filters.applied = this.filters.available.find(filter => filter.code == event.target.value);
+
+                    // If 'name' filter is selected, fetch categories
+                    if (this.filters.applied.code == 'name') {
+                        this.fetchCategories();
+                    }
+                },
+
+                fetchCategories() {
+                    let self = this;
+
+                    this.$axios.get("{{ route('admin.catalog.categories.index') }}")
+                        .then(response => {
+                            // The categories are in response.data.records
+                            if (response.data && response.data.records && Array.isArray(response.data.records)) {
+                                self.categories = response.data.records.map(category => ({
+                                    id: category.category_id, // Note: the ID field is category_id
+                                    name: category.name
+                                }));
+                            } else {
+                                // If no data found, set empty array
+                                self.categories = [];
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            self.categories = [];
+                        });
                 },
             },
         });
     </script>
-@endPushOnce    
+@endPushOnce
