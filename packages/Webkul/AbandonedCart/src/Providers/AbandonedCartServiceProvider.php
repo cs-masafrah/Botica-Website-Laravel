@@ -44,6 +44,9 @@ class AbandonedCartServiceProvider extends ServiceProvider
 
             // $schedule->command('abandoned-cart:track')->everyMinute();
             // $schedule->command('abandoned-cart:send-emails')->everyMinute();
+
+            // $schedule->command('abandoned-cart:track')->at('7:11');
+            // $schedule->command('abandoned-cart:send-emails')->at('7:11');
         });
 
         // // Publish assets if nee
@@ -57,7 +60,6 @@ class AbandonedCartServiceProvider extends ServiceProvider
 
         // Load translations
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'abandonedcart');
-
     }
 
     /**
