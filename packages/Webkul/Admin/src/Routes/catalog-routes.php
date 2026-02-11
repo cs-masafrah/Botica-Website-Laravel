@@ -11,6 +11,7 @@ use Webkul\Admin\Http\Controllers\Catalog\Product\GroupedController;
 use Webkul\Admin\Http\Controllers\Catalog\Product\SimpleController;
 use Webkul\Admin\Http\Controllers\Catalog\Product\VirtualController;
 use Webkul\Admin\Http\Controllers\Catalog\ProductController;
+use Webkul\Shop\Http\Controllers\API\BrandController;
 
 /**
  * Catalog routes.
@@ -19,6 +20,9 @@ Route::prefix('catalog')->group(function () {
     /**
      * Attributes routes.
      */
+
+    Route::get('brands', [BrandController::class, 'index'])->name('admin.catalog.brands.index');
+
     Route::controller(AttributeController::class)->prefix('attributes')->group(function () {
         Route::get('', 'index')->name('admin.catalog.attributes.index');
 
