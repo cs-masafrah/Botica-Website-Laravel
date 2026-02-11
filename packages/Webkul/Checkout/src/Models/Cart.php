@@ -183,4 +183,9 @@ class Cart extends Model implements CartContract
     {
         return CartFactory::new();
     }
+
+    public function abandonedCart(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\Webkul\AbandonedCart\Models\AbandonedCart::class, 'cart_id');
+    }
 }
