@@ -219,7 +219,7 @@
                                     @lang('admin::app.settings.themes.edit.value-input')
                                 </x-admin::form.control-group.label>
 
-                                <template v-if="filters.applied.type == 'select'">
+                                <template v-if="filters.applied.type == 'select' || filters.applied.code == 'name'">
                                     <x-admin::form.control-group.control
                                         type="select"
                                         name="value"
@@ -227,8 +227,11 @@
                                         :label="trans('admin::app.settings.themes.edit.value-input')"
                                         :placeholder="trans('admin::app.settings.themes.edit.value-input')"
                                     >
+                                        <option value="" disabled selected>
+                                            @lang('admin::app.settings.themes.edit.select')
+                                        </option>
                                         <option
-                                            v-for="option in filters.applied.options"
+                                            v-for="option in (filters.applied.code == 'name' ? brands : filters.applied.options)"
                                             :value="option.id"
                                             :text="option.name"
                                         ></option>
@@ -282,6 +285,8 @@
                 return {
                     options: @json($theme->translate($currentLocale->code)['options'] ?? null),
 
+                    brands: [],
+
                     filters: {
                         available: [
                             {
@@ -294,7 +299,7 @@
                                 id: 'name',
                                 code: 'name',
                                 name: '@lang('admin::app.settings.themes.edit.name')',
-                                type: 'text',
+                                type: 'select',
                             },
                             {
                                 id: 'status',
@@ -355,6 +360,47 @@
 
                 handleFilter(event) {
                     this.filters.applied = this.filters.available.find(filter => filter.code == event.target.value);
+
+                    // If 'name' filter is selected, fetch brands
+                    if (this.filters.applied.code == 'name') {
+                        this.fetchBrands();
+                    }
+                },
+
+                fetchBrands() {
+                    let self = this;
+
+                    // Assuming you have a route for brands similar to categories
+                    // You might need to adjust the route based on your actual setup
+                    this.$axios.get("{{ route('admin.catalog.brands.index') }}")
+                        .then(response => {
+                            // Adjust this based on your actual API response structure for brands
+                            if (response.data && response.data.records && Array.isArray(response.data.records)) {
+                                self.brands = response.data.records.map(brand => ({
+                                    id: brand.id, // Adjust based on your brand ID field
+                                    name: brand.name
+                                }));
+                            } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+                                // Alternative structure
+                                self.brands = response.data.data.map(brand => ({
+                                    id: brand.id,
+                                    name: brand.name
+                                }));
+                            } else if (response.data && Array.isArray(response.data)) {
+                                // Direct array structure
+                                self.brands = response.data.map(brand => ({
+                                    id: brand.id,
+                                    name: brand.name
+                                }));
+                            } else {
+                                // If no data found, set empty array
+                                self.brands = [];
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            self.brands = [];
+                        });
                 },
             },
         });
