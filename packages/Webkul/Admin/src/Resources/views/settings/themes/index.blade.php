@@ -200,6 +200,7 @@
                             product_carousel: "@lang('admin::app.settings.themes.create.type.product-carousel')",
                             category_carousel: "@lang('admin::app.settings.themes.create.type.category-carousel')",
                             product_by_brand: "@lang('admin::app.settings.themes.create.type.product-by-brand')",
+                            product_list: "@lang('admin::app.settings.themes.create.type.product-list')",
                             static_content: "@lang('admin::app.settings.themes.create.type.static-content')",
                             image_carousel: "@lang('admin::app.settings.themes.create.type.image-carousel')",
                             footer_links: "@lang('admin::app.settings.themes.create.type.footer-links')",

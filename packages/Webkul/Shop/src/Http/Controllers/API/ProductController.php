@@ -62,6 +62,57 @@ class ProductController extends APIController
         return ProductResource::collection($products);
     }
 
+    public function productList()
+    {
+        $searchEngine = 'database';
+
+        if (core()->getConfigData('catalog.products.search.engine') == 'elastic') {
+            $searchEngine = core()->getConfigData('catalog.products.search.storefront_mode');
+        }
+
+        $searchData = $this->resolveSearchQueryData($searchEngine);
+
+        $query = $searchData['effective_query'] ?? $searchData['original_query'];
+
+        // Get pagination parameters
+        $perPage = request()->input('per_page', 12); // Default to 12 for better grid
+        $page = request()->input('page', 1);
+
+        // Merge all request parameters including filters
+        $products = $this->productRepository
+            ->setSearchEngine($searchEngine)
+            ->getAll(array_merge(request()->query(), [
+                'query'                => $query,
+                'channel_id'           => core()->getCurrentChannel()->id,
+                'status'               => 1,
+                'visible_individually' => 1,
+                'limit'                => $perPage,
+                'page'                 => $page,
+                'sort'                 => request()->input('sort', 'created_at'),
+                'order'                => request()->input('order', 'desc')
+            ]));
+
+        if (! empty($query)) {
+            /**
+             * Update or create search term only if
+             * there is only one filter that is query param
+             */
+            if (count(request()->except(['mode', 'sort', 'limit', 'page', 'per_page'])) == 1) {
+                UpdateCreateSearchTermJob::dispatch([
+                    'term'       => $query,
+                    'results'    => $products->total(),
+                    'channel_id' => core()->getCurrentChannel()->id,
+                    'locale'     => app()->getLocale(),
+                ]);
+            }
+        }
+
+
+
+        return ProductResource::collection($products);
+    }
+
+
     /**
      * Resolve search query data.
      */
