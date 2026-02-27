@@ -264,10 +264,27 @@ return [
 
                 'categories-collections' => [
                     'name' => 'Categories Collections',
+
+                    'options' => [
+                        'title' => 'Categories Collections',
+                    ],
                 ],
 
                 'product-by-brand' => [
-                    'name' => 'Categories Collections',
+                    'name' => 'Brands Collections',
+
+                     'options' => [
+                        'title' => 'Brands Collections',
+                    ],
+
+                ],
+
+                'product-list' => [
+                    'name' => 'Products Collections',
+
+                    'options' => [
+                        'title' => 'Products Collections',
+                    ],
                 ],
 
                 'featured-collections' => [

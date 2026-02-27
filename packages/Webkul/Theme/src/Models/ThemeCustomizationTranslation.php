@@ -40,6 +40,8 @@ class ThemeCustomizationTranslation extends Model implements ThemeCustomizationT
 
     public const PRODUCT_BY_BRAND = 'product_by_brand';
 
+    public const PRODUCT_LIST = 'product_list';
+
     /**
      * Footer links precision.
      *

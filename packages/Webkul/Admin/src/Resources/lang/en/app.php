@@ -3473,6 +3473,7 @@ return [
                 'type' => [
                     'category-carousel' => 'Category Carousel',
                     'product-by-brand' => 'Product by Brand',
+                    'product-list' => 'Product List',
                     'footer-links'      => 'Footer Links',
                     'image-carousel'    => 'Image Carousel',
                     'product-carousel'  => 'Product Carousel',
@@ -3492,7 +3493,9 @@ return [
                 'back'                          => 'Back',
                 'category-carousel'             => 'Category Carousel',
                 'product-by-brand'             => 'Product by Brand',
+                'product-list'             => 'Product List',
                 'product-by-brand-description' => 'Display dynamic categories attractively using a responsive product by brand.',
+                'product-list-description' => 'Display Product List',
                 'category-carousel-description' => 'Display dynamic categories attractively using a responsive category carousel.',
                 'channels'                      => 'Channels',
                 'column'                        => 'Column',

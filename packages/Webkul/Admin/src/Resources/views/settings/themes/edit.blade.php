@@ -96,6 +96,8 @@
                 <!-- product by brand -->
                 @includeWhen($theme->type === 'product_by_brand',  'admin::settings.themes.edit.product-by-brand')
 
+                @includeWhen($theme->type === 'product_list',  'admin::settings.themes.edit.product-list')
+
                 <!-- Static-Content Template -->
                 @includeWhen($theme->type === 'static_content', 'admin::settings.themes.edit.static-content')
 
