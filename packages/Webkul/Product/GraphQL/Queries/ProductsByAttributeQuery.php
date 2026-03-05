@@ -190,9 +190,98 @@ class ProductsByAttributeQuery
     /**
      * Get all attribute values with product counts
      */
+    // public function attributeValuesWithCounts($rootValue, array $args, GraphQLContext $context)
+    // {
+    //     $attributeCode = $args['attribute'];
+
+    //     $attribute = $this->attributeRepository->findOneByField('code', $attributeCode);
+
+    //     if (!$attribute) {
+    //         $attribute = $this->attributeRepository->findOneByField('admin_name', $attributeCode);
+    //     }
+
+    //     if (!$attribute) {
+    //         throw new \Exception("Attribute '{$attributeCode}' not found");
+    //     }
+
+    //     $results = [];
+
+    //     if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
+    //         // For select attributes, get all options with counts
+    //         $options = \DB::table('attribute_options')
+    //             ->where('attribute_id', $attribute->id)
+    //             ->get(['id', 'admin_name', 'image']); // Added 'image' field
+
+    //         foreach ($options as $option) {
+    //             $count = $this->productRepository
+    //                 ->whereHas('attribute_values', function ($q) use ($attribute, $option) {
+    //                     $q->where('attribute_id', $attribute->id)
+    //                         ->where('integer_value', $option->id);
+    //                 })
+    //                 ->count();
+
+    //             if ($count > 0) {
+    //                 // Get image URL if exists
+    //                 $imageUrl = null;
+    //                 if ($option->image) {
+    //                     $imageUrl = Storage::url($option->image);
+    //                 }
+
+    //                 $results[] = [
+    //                     'value' => $option->admin_name,
+    //                     'label' => $option->admin_name,
+    //                     'product_count' => $count,
+    //                     'option_id' => $option->id,
+    //                     'image_url' => $imageUrl, // Added image_url field
+    //                 ];
+    //             }
+    //         }
+    //     } else {
+    //         // For text attributes, get distinct values with counts
+    //         $values = \DB::table('product_attribute_values')
+    //             ->where('attribute_id', $attribute->id)
+    //             ->whereNotNull('text_value')
+    //             ->select('text_value')
+    //             ->distinct()
+    //             ->get();
+
+    //         foreach ($values as $value) {
+    //             $count = $this->productRepository
+    //                 ->whereHas('attribute_values', function ($q) use ($attribute, $value) {
+    //                     $q->where('attribute_id', $attribute->id)
+    //                         ->where('text_value', $value->text_value);
+    //                 })
+    //                 ->count();
+
+    //             if ($count > 0) {
+    //                 $results[] = [
+    //                     'value' => $value->text_value,
+    //                     'label' => $value->text_value,
+    //                     'product_count' => $count,
+    //                     'image_url' => null, // Text attributes don't have images
+    //                 ];
+    //             }
+    //         }
+    //     }
+
+    //     // Sort by product count descending
+    //     usort($results, function ($a, $b) {
+    //         return $b['product_count'] <=> $a['product_count'];
+    //     });
+
+    //     return [
+    //         'attribute' => $attributeCode,
+    //         'values' => $results,
+    //         'total_values' => count($results)
+    //     ];
+    // }
+
     public function attributeValuesWithCounts($rootValue, array $args, GraphQLContext $context)
     {
         $attributeCode = $args['attribute'];
+
+        // Get locale from args or use default
+        $locale = $args['locale'] ?? app()->getLocale();
 
         $attribute = $this->attributeRepository->findOneByField('code', $attributeCode);
 
@@ -207,10 +296,18 @@ class ProductsByAttributeQuery
         $results = [];
 
         if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
-            // For select attributes, get all options with counts
+            // For select attributes, get all options with counts and translations
             $options = \DB::table('attribute_options')
                 ->where('attribute_id', $attribute->id)
-                ->get(['id', 'admin_name', 'image']); // Added 'image' field
+                ->get(['id', 'admin_name', 'image']);
+
+            // Get translations for all options in the specified locale
+            $optionIds = $options->pluck('id')->toArray();
+            $translations = \DB::table('attribute_option_translations')
+                ->whereIn('attribute_option_id', $optionIds)
+                ->where('locale', $locale)
+                ->get()
+                ->keyBy('attribute_option_id');
 
             foreach ($options as $option) {
                 $count = $this->productRepository
@@ -221,6 +318,11 @@ class ProductsByAttributeQuery
                     ->count();
 
                 if ($count > 0) {
+                    // Get translated label if available, otherwise fallback to admin_name
+                    $translatedLabel = isset($translations[$option->id])
+                        ? $translations[$option->id]->label
+                        : $option->admin_name;
+
                     // Get image URL if exists
                     $imageUrl = null;
                     if ($option->image) {
@@ -229,10 +331,11 @@ class ProductsByAttributeQuery
 
                     $results[] = [
                         'value' => $option->admin_name,
-                        'label' => $option->admin_name,
+                        'label' => $translatedLabel, // Use translated label
                         'product_count' => $count,
                         'option_id' => $option->id,
-                        'image_url' => $imageUrl, // Added image_url field
+                        'image_url' => $imageUrl,
+                        'locale' => $locale, // Added locale for reference
                     ];
                 }
             }
@@ -256,9 +359,10 @@ class ProductsByAttributeQuery
                 if ($count > 0) {
                     $results[] = [
                         'value' => $value->text_value,
-                        'label' => $value->text_value,
+                        'label' => $value->text_value, // Text attributes don't have translations
                         'product_count' => $count,
-                        'image_url' => null, // Text attributes don't have images
+                        'image_url' => null,
+                        'locale' => $locale,
                     ];
                 }
             }
@@ -275,7 +379,6 @@ class ProductsByAttributeQuery
             'total_values' => count($results)
         ];
     }
-
     /**
      * Debug method to check product relationships
      */

@@ -135,10 +135,10 @@ extend type Query {
     Get all values for an attribute with product counts
     """
     attributeValuesWithCounts(
-        attribute: String!
-    ): AttributeValuesWithCounts
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
-
+    attribute: String!
+    locale: String
+): AttributeValuesWithCounts
+    @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
     """
     DEBUG: Check product relationships
     """
