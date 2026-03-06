@@ -1,3 +1,4 @@
+{{-- Resources/views/admin/create.blade.php --}}
 <x-admin::layouts>
 
     <x-slot:title>
@@ -8,94 +9,126 @@
 
         @csrf
 
-        {{-- Title --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.title')
-            </label>
-            <input type="text" name="title" class="w-full px-3 py-2 border rounded dark:bg-gray-800" required>
-        </div>
-
-        {{-- Caption --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.caption')
-            </label>
-            <textarea name="caption" class="w-full px-3 py-2 border rounded dark:bg-gray-800"></textarea>
-        </div>
-
-        {{-- Product --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.product')
-            </label>
-            <select name="product_id" class="w-full px-3 py-2 border rounded dark:bg-gray-800">
-                <option value="">—</option>
-                @foreach ($products as $product)
-                <option value="{{ $product->id }}">{{ $product->name }}</option>
+        {{-- Language Tabs --}}
+        <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="languageTabs" role="tablist">
+                @foreach ($locales as $index => $locale)
+                    <li class="mr-2" role="presentation">
+                        <button
+                            class="inline-block p-4 rounded-t-lg border-b-2 {{ $index === 0 ? 'border-blue-600 text-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300' }}"
+                            id="{{ $locale->code }}-tab"
+                            data-tabs-target="#{{ $locale->code }}"
+                            type="button"
+                            role="tab"
+                            aria-controls="{{ $locale->code }}"
+                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
+                            @click="switchTab('{{ $locale->code }}')"
+                        >
+                            {{ $locale->name }}
+                        </button>
+                    </li>
                 @endforeach
-            </select>
+            </ul>
         </div>
 
-        {{-- Video --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.video')
-            </label>
-            <input type="file" name="video" accept="video/mp4,video/mov,video/webm" class="w-full text-sm" required>
+        {{-- Language Content --}}
+        <div id="languageTabContent">
+            @foreach ($locales as $index => $locale)
+                <div
+                    class="{{ $index === 0 ? '' : 'hidden' }}"
+                    id="{{ $locale->code }}"
+                    role="tabpanel"
+                    aria-labelledby="{{ $locale->code }}-tab"
+                >
+                    {{-- Title --}}
+                    <div class="mb-4">
+                        <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            @lang('reel::app.admin.reels.fields.title') ({{ $locale->name }})
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="{{ $locale->code }}[title]"
+                            class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                            required
+                        >
+                    </div>
+
+                    {{-- Caption --}}
+                    <div class="mb-4">
+                        <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            @lang('reel::app.admin.reels.fields.caption') ({{ $locale->name }})
+                        </label>
+                        <textarea
+                            name="{{ $locale->code }}[caption]"
+                            class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+            @endforeach
         </div>
 
-        {{-- Thumbnail --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.thumbnail')
-            </label>
-            <input type="file" name="thumbnail" accept="image/*" class="w-full text-sm">
-        </div>
+        {{-- Non-Translatable Fields --}}
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
+                @lang('reel::app.admin.reels.general-settings')
+            </h3>
 
-        {{-- Duration (seconds) --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.duration')
-            </label>
-            <input type="number" name="duration" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" placeholder="Duration in seconds">
-        </div>
+            {{-- Product --}}
+            <div class="mb-4">
+                <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.product')
+                </label>
+                <select name="product_id" class="w-full px-3 py-2 border rounded dark:bg-gray-800">
+                    <option value="">—</option>
+                    @foreach ($products as $product)
+                    <option value="{{ $product->id }}">{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-        {{-- Is Active --}}
-        <div class="mb-4 flex items-center gap-2">
-            <input type="checkbox" id="is_active" name="is_active" value="1" checked>
-            <label for="is_active" class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.is_active')
-            </label>
-        </div>
+            {{-- Video --}}
+            <div class="mb-4">
+                <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.video')
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="file" name="video" accept="video/mp4,video/mov,video/webm" class="w-full text-sm" required>
+            </div>
 
-        {{-- Sort Order --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.sort_order')
-            </label>
-            <input type="number" name="sort_order" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" value="0">
-        </div>
+            {{-- Thumbnail --}}
+            <div class="mb-4">
+                <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.thumbnail')
+                </label>
+                <input type="file" name="thumbnail" accept="image/*" class="w-full text-sm">
+            </div>
 
-        {{-- Views Count --}}
-        <div class="mb-4">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.views_count')
-            </label>
-            <input type="number" name="views_count" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" value="0">
-        </div>
+            {{-- Duration --}}
+            <div class="mb-4">
+                <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.duration')
+                </label>
+                <input type="number" name="duration" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" placeholder="Duration in seconds">
+            </div>
 
-        {{-- Likes Count --}}
-        <div class="mb-6">
-            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                @lang('reel::app.admin.reels.fields.likes_count')
-            </label>
-            <input type="number" name="likes_count" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" value="0">
-        </div>
+            {{-- Is Active --}}
+            <div class="mb-4 flex items-center gap-2">
+                <input type="checkbox" id="is_active" name="is_active" value="1" checked>
+                <label for="is_active" class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.is_active')
+                </label>
+            </div>
 
-        {{-- Created By (hidden or set in controller) --}}
-        {{-- Usually you don’t want user to select this; handle in backend --}}
-        <input type="hidden" name="created_by" value="{{ auth()->id() }}">
+            {{-- Sort Order --}}
+            <div class="mb-6">
+                <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    @lang('reel::app.admin.reels.fields.sort_order')
+                </label>
+                <input type="number" name="sort_order" class="w-full px-3 py-2 border rounded dark:bg-gray-800" min="0" step="1" value="0">
+            </div>
+        </div>
 
         <div class="flex gap-2">
             <button type="submit" class="primary-button">
@@ -107,5 +140,32 @@
             </a>
         </div>
     </form>
+
+    @pushOnce('scripts')
+    <script>
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('[role="tabpanel"]').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Show selected tab
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Update tab buttons
+            document.querySelectorAll('[role="tab"]').forEach(button => {
+                button.classList.remove('border-blue-600', 'text-blue-600', 'dark:text-blue-500', 'dark:border-blue-500');
+                button.classList.add('border-transparent');
+                button.setAttribute('aria-selected', 'false');
+            });
+
+            // Activate clicked tab
+            const activeTab = document.getElementById(tabId + '-tab');
+            activeTab.classList.add('border-blue-600', 'text-blue-600', 'dark:text-blue-500', 'dark:border-blue-500');
+            activeTab.classList.remove('border-transparent');
+            activeTab.setAttribute('aria-selected', 'true');
+        }
+    </script>
+    @endPushOnce
 
 </x-admin::layouts>

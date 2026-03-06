@@ -4,7 +4,6 @@ namespace Webkul\Reel\DataGrids\Admin;
 
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
-use Webkul\Product\Models\Product;
 
 class ReelDataGrid extends DataGrid
 {
@@ -16,6 +15,10 @@ class ReelDataGrid extends DataGrid
         $locale = app()->getLocale();
 
         $queryBuilder = DB::table('reels')
+            ->leftJoin('reel_translations', function ($join) use ($locale) {
+                $join->on('reels.id', '=', 'reel_translations.reel_id')
+                    ->where('reel_translations.locale', '=', $locale);
+            })
             ->leftJoin('admins', 'reels.created_by', '=', 'admins.id')
             ->leftJoin('product_flat', function ($join) use ($locale) {
                 $join->on('reels.product_id', '=', 'product_flat.product_id')
@@ -24,8 +27,8 @@ class ReelDataGrid extends DataGrid
             ->select(
                 'reels.id',
                 'reels.sort_order',
-                'reels.title',
-                'reels.caption',
+                'reel_translations.title as title',
+                'reel_translations.caption as caption',
                 'reels.video_path',
                 'reels.thumbnail_path',
                 'reels.duration',
@@ -40,10 +43,11 @@ class ReelDataGrid extends DataGrid
                 'reels.updated_at',
                 'reels.deleted_at'
             )
-            ->orderBy('reels.sort_order', 'asc'); // Sort by sort_order
+            ->orderBy('reels.sort_order', 'asc');
 
         return $queryBuilder;
     }
+
     /**
      * Prepare columns.
      */
@@ -67,7 +71,7 @@ class ReelDataGrid extends DataGrid
             },
         ]);
 
-        // Rest of your columns...
+        // ID column
         $this->addColumn([
             'index'      => 'id',
             'label'      => trans('reel::app.admin.reels.datagrid.id'),
@@ -77,6 +81,7 @@ class ReelDataGrid extends DataGrid
             'filterable' => false,
         ]);
 
+        // Title column - now from translations
         $this->addColumn([
             'index'      => 'title',
             'label'      => trans('reel::app.admin.reels.datagrid.title'),
@@ -86,6 +91,7 @@ class ReelDataGrid extends DataGrid
             'filterable' => false,
         ]);
 
+        // Caption column - now from translations
         $this->addColumn([
             'index'      => 'caption',
             'label'      => trans('reel::app.admin.reels.datagrid.caption'),
@@ -93,8 +99,12 @@ class ReelDataGrid extends DataGrid
             'searchable' => true,
             'sortable'   => false,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return $row->caption ? substr($row->caption, 0, 50) . (strlen($row->caption) > 50 ? '...' : '') : '—';
+            },
         ]);
 
+        // Video column
         $this->addColumn([
             'index'   => 'video_path',
             'label'   => trans('reel::app.admin.reels.datagrid.video'),
@@ -112,7 +122,7 @@ class ReelDataGrid extends DataGrid
             },
         ]);
 
-
+        // Thumbnail column
         $this->addColumn([
             'index'   => 'thumbnail_path',
             'label'   => trans('reel::app.admin.reels.datagrid.thumbnail'),
@@ -120,14 +130,14 @@ class ReelDataGrid extends DataGrid
             'escape'  => false,
             'closure' => function ($row) {
                 if ($row->thumbnail_path) {
-                    $url = asset('storage/' . $row->thumbnail_path); // or Storage facade URL method
+                    $url = asset('storage/' . $row->thumbnail_path);
                     return '<img src="' . $url . '" alt="Thumbnail" style="width: 80px; height: auto; border-radius: 4px;">';
                 }
                 return '-';
             },
         ]);
 
-
+        // Duration column
         $this->addColumn([
             'index'      => 'duration',
             'label'      => trans('reel::app.admin.reels.datagrid.duration'),
@@ -135,8 +145,17 @@ class ReelDataGrid extends DataGrid
             'searchable' => false,
             'sortable'   => true,
             'filterable' => true,
+            'closure'    => function ($row) {
+                if ($row->duration) {
+                    $minutes = floor($row->duration / 60);
+                    $seconds = $row->duration % 60;
+                    return sprintf('%d:%02d', $minutes, $seconds);
+                }
+                return '—';
+            },
         ]);
 
+        // FIXED: Status column - Changed type to 'boolean' and fixed filter options
         $this->addColumn([
             'index'              => 'is_active',
             'label'              => trans('reel::app.admin.reels.fields.status'),
@@ -160,6 +179,8 @@ class ReelDataGrid extends DataGrid
             },
         ]);
 
+
+        // Sort order column
         $this->addColumn([
             'index'      => 'sort_order',
             'label'      => trans('reel::app.admin.reels.datagrid.sort_order'),
@@ -168,22 +189,31 @@ class ReelDataGrid extends DataGrid
             'filterable' => true,
         ]);
 
+        // Views count column
         $this->addColumn([
             'index'      => 'views_count',
             'label'      => trans('reel::app.admin.reels.datagrid.views'),
             'type'       => 'integer',
             'sortable'   => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return number_format($row->views_count ?? 0);
+            },
         ]);
 
+        // Likes count column
         $this->addColumn([
             'index'      => 'likes_count',
             'label'      => trans('reel::app.admin.reels.datagrid.likes'),
             'type'       => 'integer',
             'sortable'   => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return number_format($row->likes_count ?? 0);
+            },
         ]);
 
+        // Created by column
         $this->addColumn([
             'index'      => 'created_by_name',
             'label'      => trans('reel::app.admin.reels.datagrid.created_by'),
@@ -191,15 +221,32 @@ class ReelDataGrid extends DataGrid
             'searchable' => false,
             'sortable'   => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return $row->created_by_name ?? '—';
+            },
         ]);
 
+        // Product name column
         $this->addColumn([
             'index'      => 'product_name',
             'label'      => trans('reel::app.admin.reels.datagrid.product'),
             'type'       => 'string',
-            'searchable' => false,
+            'searchable' => true,
             'sortable'   => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return $row->product_name ?? '—';
+            },
+        ]);
+
+        // Created at column
+        $this->addColumn([
+            'index'      => 'created_at',
+            'label'      => trans('reel::app.admin.reels.datagrid.created_at'),
+            'type'       => 'datetime',
+            'searchable' => false,
+            'sortable'   => true,
+            'filterable' => true,
         ]);
     }
 
@@ -219,6 +266,7 @@ class ReelDataGrid extends DataGrid
         ]);
 
         $this->addAction([
+            'index'  => 'view',
             'icon'   => 'icon-view',
             'title'  => trans('reel::app.admin.reels.datagrid.view'),
             'method' => 'GET',
@@ -228,7 +276,7 @@ class ReelDataGrid extends DataGrid
         ]);
 
         $this->addAction([
-            'index'  => 'delete',  // <-- Add this line
+            'index'  => 'delete',
             'icon'   => 'icon-delete',
             'title'  => trans('reel::app.admin.reels.datagrid.delete'),
             'method' => 'DELETE',
@@ -236,5 +284,28 @@ class ReelDataGrid extends DataGrid
                 return route('admin.reel.destroy', ['reel' => $row->id]);
             },
         ]);
+    }
+
+    /**
+     * Prepare mass actions.
+     */
+    public function prepareMassActions()
+    {
+        // Uncomment these when you have the routes defined
+        /*
+        $this->addMassAction([
+            'icon'   => 'icon-delete',
+            'title'  => trans('reel::app.admin.reels.datagrid.delete'),
+            'method' => 'DELETE',
+            'url'    => route('admin.reel.mass_delete'),
+        ]);
+
+        $this->addMassAction([
+            'icon'   => 'icon-eye',
+            'title'  => trans('reel::app.admin.reels.datagrid.update_status'),
+            'method' => 'POST',
+            'url'    => route('admin.reel.mass_update_status'),
+        ]);
+        */
     }
 }

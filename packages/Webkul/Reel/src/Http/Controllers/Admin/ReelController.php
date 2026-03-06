@@ -1,4 +1,5 @@
 <?php
+// Http/Controllers/Admin/ReelController.php
 
 namespace Webkul\Reel\Http\Controllers\Admin;
 
@@ -11,19 +12,22 @@ use Webkul\Reel\Http\Controllers\Controller;
 use Webkul\Reel\Repositories\ReelRepository;
 use Webkul\Reel\DataGrids\Admin\ReelDataGrid;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Core\Repositories\LocaleRepository;
 
 class ReelController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     */
     protected $reelRepository;
     protected $productRepository;
+    protected $localeRepository;
 
-    public function __construct(ReelRepository $reelRepository, ProductRepository $productRepository)
-    {
+    public function __construct(
+        ReelRepository $reelRepository,
+        ProductRepository $productRepository,
+        LocaleRepository $localeRepository
+    ) {
         $this->reelRepository = $reelRepository;
         $this->productRepository = $productRepository;
+        $this->localeRepository = $localeRepository;
     }
 
     /**
@@ -39,7 +43,10 @@ class ReelController extends Controller
             return datagrid(ReelDataGrid::class)->process();
         }
 
-        return view('reel::admin.index');
+        // Get all active locales from the system
+        $locales = $this->localeRepository->all();
+
+        return view('reel::admin.index', compact('locales'));
     }
 
     /**
@@ -52,8 +59,9 @@ class ReelController extends Controller
         }
 
         $products = $this->productRepository->all();
+        $locales = $this->localeRepository->all();
 
-        return view('reel::admin.create', compact('products'));
+        return view('reel::admin.create', compact('products', 'locales'));
     }
 
     /**
@@ -65,9 +73,7 @@ class ReelController extends Controller
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
 
-        $validated = $request->validate([
-            'title'        => 'required|string|max:255',
-            'caption'      => 'nullable|string',
+        $request->validate([
             'product_id'   => 'nullable|exists:products,id',
             'video'        => 'required|mimes:mp4,mov,webm|max:51200',
             'thumbnail'    => 'nullable|image|max:2048',
@@ -75,6 +81,15 @@ class ReelController extends Controller
             'sort_order'   => 'nullable|integer',
             'is_active'    => 'boolean',
         ]);
+
+        // Validate translations
+        $locales = $this->localeRepository->all();
+        foreach ($locales as $locale) {
+            $request->validate([
+                $locale->code . '.title' => 'required|string|max:255',
+                $locale->code . '.caption' => 'nullable|string',
+            ]);
+        }
 
         /** Store video */
         $videoPath = $request->file('video')->store('reels/videos', 'public');
@@ -86,40 +101,37 @@ class ReelController extends Controller
         }
 
         // Calculate sort order if not provided
-        $sortOrder = $validated['sort_order'] ?? 0;
+        $sortOrder = $request->input('sort_order', 0);
         if ($sortOrder == 0) {
-            // Get the maximum sort_order from database
             $maxSortOrder = \DB::table('reels')->max('sort_order');
             $sortOrder = ($maxSortOrder ?: 0) + 1;
         }
 
-        $this->reelRepository->create([
-            'title'          => $validated['title'],
-            'caption'        => $validated['caption'] ?? null,
-            'product_id'     => $validated['product_id'] ?? null,
+        $data = [
             'video_path'     => $videoPath,
             'thumbnail_path' => $thumbnailPath,
-            'duration'       => $validated['duration'] ?? null,
-            'sort_order'     => $sortOrder, // Use calculated sort order
-            'is_active'      => $validated['is_active'] ?? true,
+            'duration'       => $request->input('duration'),
+            'sort_order'     => $sortOrder,
+            'is_active'      => $request->boolean('is_active', true),
+            'product_id'     => $request->input('product_id'),
             'created_by'     => auth()->guard('admin')->id(),
-        ]);
+        ];
+
+        // Add translations
+        foreach ($locales as $locale) {
+            if ($request->has($locale->code)) {
+                $data[$locale->code] = [
+                    'title'   => $request->input($locale->code . '.title'),
+                    'caption' => $request->input($locale->code . '.caption'),
+                ];
+            }
+        }
+
+        $this->reelRepository->create($data);
 
         return new JsonResponse([
             'message' => trans('reel::app.admin.reels.messages.create-success'),
         ]);
-    }
-
-    /**
-     * Show the specified reel.
-     */
-    public function show(Reel $reel)
-    {
-        if (! bouncer()->hasPermission('reel.view')) {
-            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
-        }
-
-        return view('reel::admin.show', compact('reel'));
     }
 
     /**
@@ -132,10 +144,15 @@ class ReelController extends Controller
         }
 
         $products = $this->productRepository->all();
+        $locales = $this->localeRepository->all();
+
+        // Load translations
+        $reel->load('translations');
 
         return response()->json([
             'data' => $reel,
             'products' => $products,
+            'locales' => $locales,
         ]);
     }
 
@@ -148,9 +165,7 @@ class ReelController extends Controller
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
 
-        $validated = $request->validate([
-            'title'        => 'required|string|max:255',
-            'caption'      => 'nullable|string',
+        $request->validate([
             'product_id'   => 'nullable|exists:products,id',
             'video'        => 'nullable|mimes:mp4,mov,webm|max:51200',
             'thumbnail'    => 'nullable|image|max:2048',
@@ -159,7 +174,21 @@ class ReelController extends Controller
             'is_active'    => 'boolean',
         ]);
 
-        $data = $validated;
+        // Validate translations
+        $locales = $this->localeRepository->all();
+        foreach ($locales as $locale) {
+            $request->validate([
+                $locale->code . '.title' => 'required|string|max:255',
+                $locale->code . '.caption' => 'nullable|string',
+            ]);
+        }
+
+        $data = [
+            'duration'       => $request->input('duration', $reel->duration),
+            'sort_order'     => $request->input('sort_order', $reel->sort_order),
+            'is_active'      => $request->boolean('is_active', $reel->is_active),
+            'product_id'     => $request->input('product_id', $reel->product_id),
+        ];
 
         /** Replace video if uploaded */
         if ($request->hasFile('video')) {
@@ -181,6 +210,16 @@ class ReelController extends Controller
                 ->store('reels/thumbnails', 'public');
         }
 
+        // Add translations
+        foreach ($locales as $locale) {
+            if ($request->has($locale->code)) {
+                $data[$locale->code] = [
+                    'title'   => $request->input($locale->code . '.title'),
+                    'caption' => $request->input($locale->code . '.caption'),
+                ];
+            }
+        }
+
         $this->reelRepository->update($data, $reel->id);
 
         return new JsonResponse([
@@ -197,11 +236,92 @@ class ReelController extends Controller
             abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
         }
 
+        // Cleanup files
+        if ($reel->video_path) {
+            Storage::disk('public')->delete($reel->video_path);
+        }
+        if ($reel->thumbnail_path) {
+            Storage::disk('public')->delete($reel->thumbnail_path);
+        }
+
         $this->reelRepository->delete($reel->id);
 
         return new JsonResponse([
             'message' => trans('reel::app.admin.reels.messages.delete-success'),
         ]);
+    }
+
+    /**
+     * Mass delete reels.
+     */
+    public function massDestroy(Request $request): JsonResponse
+    {
+        if (! bouncer()->hasPermission('reel.delete')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
+
+        $request->validate([
+            'indices' => 'required|array',
+            'indices.*' => 'integer|exists:reels,id',
+        ]);
+
+        try {
+            foreach ($request->indices as $reelId) {
+                $reel = $this->reelRepository->find($reelId);
+
+                if ($reel) {
+                    // Cleanup files
+                    if ($reel->video_path) {
+                        Storage::disk('public')->delete($reel->video_path);
+                    }
+                    if ($reel->thumbnail_path) {
+                        Storage::disk('public')->delete($reel->thumbnail_path);
+                    }
+
+                    $this->reelRepository->delete($reelId);
+                }
+            }
+
+            return new JsonResponse([
+                'message' => trans('reel::app.admin.reels.messages.mass-delete-success'),
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mass update reel status.
+     */
+    public function massUpdateStatus(Request $request): JsonResponse
+    {
+        if (! bouncer()->hasPermission('reel.edit')) {
+            abort(401, trans('reel::app.admin.reels.messages.unauthorized'));
+        }
+
+        $request->validate([
+            'indices' => 'required|array',
+            'indices.*' => 'integer|exists:reels,id',
+            'value' => 'required|in:0,1',
+        ]);
+
+        try {
+            foreach ($request->indices as $reelId) {
+                $this->reelRepository->update([
+                    'is_active' => $request->value
+                ], $reelId);
+            }
+
+            return new JsonResponse([
+                'message' => trans('reel::app.admin.reels.messages.mass-update-success'),
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -217,19 +337,12 @@ class ReelController extends Controller
         }
 
         try {
-            // Get the sort_order data
             $sortOrder = $request->input('sort_order');
 
-            // If it's a string, decode it
             if (is_string($sortOrder)) {
                 $sortOrder = json_decode($sortOrder, true);
-
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new \Exception('Invalid JSON format for sort_order');
-                }
             }
 
-            // Validate the data
             $validator = \Validator::make(['sort_order' => $sortOrder], [
                 'sort_order' => 'required|array',
                 'sort_order.*.id' => 'required|exists:reels,id',
@@ -240,11 +353,9 @@ class ReelController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed: ' . $validator->errors()->first(),
-                    'errors' => $validator->errors()
                 ], 422);
             }
 
-            // Process updates
             foreach ($sortOrder as $item) {
                 \DB::table('reels')
                     ->where('id', $item['id'])
@@ -269,7 +380,6 @@ class ReelController extends Controller
     public function getProducts()
     {
         try {
-            // Get all products with id and name
             $products = $this->productRepository->all();
 
             return response()->json([
@@ -278,6 +388,32 @@ class ReelController extends Controller
                     return [
                         'id' => $product->id,
                         'name' => $product->name
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get locales for dropdown.
+     */
+    public function getLocales()
+    {
+        try {
+            $locales = $this->localeRepository->all();
+
+            return response()->json([
+                'success' => true,
+                'data' => $locales->map(function ($locale) {
+                    return [
+                        'id' => $locale->id,
+                        'code' => $locale->code,
+                        'name' => $locale->name,
                     ];
                 })
             ]);
