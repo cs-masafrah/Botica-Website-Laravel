@@ -1,10 +1,10 @@
 <?php
-// Models/ReelLikeProxy.php
+// Models/ReelTranslationProxy.php
 
 namespace Webkul\Reel\Models;
 
 use Konekt\Concord\Proxies\ModelProxy;
 
-class ReelLikeProxy extends ModelProxy
+class ReelTranslationProxy extends ModelProxy
 {
 }

@@ -1,11 +1,13 @@
 <?php
+// Models/Reel.php
 
 namespace Webkul\Reel\Models;
 
 use DB;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Webkul\Product\Models\Product;
+use Webkul\Core\Models\CoreConfig;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Model;
 use Webkul\Reel\Contracts\Reel as ReelContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Webkul\Customer\Models\Customer;
@@ -17,8 +19,6 @@ class Reel extends Model implements ReelContract
     protected $table = 'reels';
 
     protected $fillable = [
-        'title',
-        'caption',
         'video_path',
         'thumbnail_path',
         'duration',
@@ -30,7 +30,7 @@ class Reel extends Model implements ReelContract
         'product_id'
     ];
 
-    protected $appends = ['video_url', 'thumbnail_url', 'is_liked'];
+    protected $appends = ['video_url', 'thumbnail_url', 'is_liked','title', 'caption'];
 
     protected $casts = [
         'is_active' => 'boolean',
@@ -38,6 +38,72 @@ class Reel extends Model implements ReelContract
         'views_count' => 'integer',
         'likes_count' => 'integer',
     ];
+
+     protected $with = ['translations'];
+    /**
+     * Get the translations for the reel.
+     */
+    public function translations()
+    {
+        return $this->hasMany(ReelTranslationProxy::modelClass(), 'reel_id');
+    }
+
+    /**
+     * Get translation for a specific locale.
+     */
+    public function translate($locale = null)
+    {
+        $locale = $locale ?: app()->getLocale();
+
+        $translation = $this->translations()
+            ->where('locale', $locale)
+            ->first();
+
+        if (!$translation) {
+            $translation = $this->translations()
+                ->where('locale', core()->getDefaultLocaleCodeFromDefaultChannel())
+                ->first();
+        }
+
+        return $translation;
+    }
+
+    /**
+     * Get title attribute from translation.
+     */
+    public function getTitleAttribute()
+    {
+        $translation = $this->translate();
+
+        return $translation ? $translation->title : null;
+    }
+
+    /**
+     * Get caption attribute from translation.
+     */
+    public function getCaptionAttribute()
+    {
+        $translation = $this->translate();
+
+        return $translation ? $translation->caption : null;
+    }
+
+    /**
+     * Get product name with locale support.
+     */
+    public function getProductNameAttribute()
+    {
+        if (! $this->product_id) {
+            return null;
+        }
+
+        $productFlat = DB::table('product_flat')
+            ->where('product_id', $this->product_id)
+            ->where('locale', app()->getLocale())
+            ->first();
+
+        return $productFlat->name ?? null;
+    }
 
     public function product()
     {
@@ -53,6 +119,7 @@ class Reel extends Model implements ReelContract
     {
         return $this->hasMany(ReelView::class, 'reel_id');
     }
+
 
     public function likedByCustomers()
     {
@@ -76,42 +143,19 @@ class Reel extends Model implements ReelContract
 
     public function getIsLikedAttribute()
     {
-        // Check customer authentication
-
-        // Check customer authentication
         $customer = auth()->guard('customer')->user();
-        if (!$customer) {
-            // Try other possible guards
-            $customer = auth()->guard('api')->user();
-        }
-
-        // // Check admin authentication
         $admin = auth()->guard('admin')->user();
-        if (!$admin) {
-            // Try other possible admin guards
-            $admin = auth()->guard('admin-api')->user();
-        }
 
         if (!$customer && !$admin) {
-            throw new \Exception('Authentication required to like a reel. Please login as customer or admin.');
+            return false;
         }
 
         $userId = $customer ? $customer->id : $admin->id;
-        $userType = $customer ? 'customer' : 'admin';
 
-        if ($userType == 'customer') {
-            return $this->likes()->where('customer_id', $userId)->exists();
-        }
-
-        // Check admin authentication
-        if ($userType == 'admin') {
-            return $this->likes()->where('customer_id', $userId)->exists();
-        }
-
-        return false;
+        return $this->likes()->where('customer_id', $userId)->exists();
     }
 
-    // For GraphQL @method directives
+    // GraphQL helper methods
     public function getVideoUrl()
     {
         return $this->video_url;
@@ -127,20 +171,12 @@ class Reel extends Model implements ReelContract
         return $this->is_liked;
     }
 
-    /**
-     * Accessor for product_name logic
-     */
-    public function getProductNameAttribute()
+    public function scopeWithLocale($query, $locale = null)
     {
-        if (! $this->product_id) {
-            return null;
-        }
+        $locale = $locale ?: app()->getLocale();
 
-        $productFlat = DB::table('product_flat')
-            ->where('product_id', $this->product_id)
-            ->where('locale', app()->getLocale())
-            ->first();
-
-        return $productFlat->name ?? null;
+        return $query->whereHas('translations', function ($q) use ($locale) {
+            $q->where('locale', $locale);
+        });
     }
 }

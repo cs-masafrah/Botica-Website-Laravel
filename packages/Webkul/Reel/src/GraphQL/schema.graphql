@@ -1,3 +1,5 @@
+# graphql/schema.graphql
+
 type Reel {
   id: ID!
   title: String!
@@ -17,41 +19,151 @@ type Reel {
   is_liked: Boolean @method(name: "getIsLiked")
   created_at: DateTime
   updated_at: DateTime
+  translations: [ReelTranslation!]! @hasMany
+}
+
+type ReelTranslation {
+  id: ID!
+  reel_id: Int!
+  locale: String!
+  title: String!
+  caption: String
+}
+
+input ReelTranslationInput {
+  title: String!
+  caption: String
+}
+
+input LocaleTranslationInput {
+  locale: String!
+  title: String!
+  caption: String
 }
 
 input ReelInput {
-  title: String!
-  caption: String
   product_id: Int
   duration: Int
   sort_order: Int
   is_active: Boolean
   video_path: String
   thumbnail_path: String
-}
-
-extend type Query {
-  reels(input: FilterReelInput): [Reel!]! @paginate(type: "PAGINATOR" defaultCount: 10 model: "Webkul\\Reel\\Models\\Reel")
-  reel(id: ID! @eq): Reel @find(model: "Webkul\\Reel\\Models\\Reel")
-  reelAnalytics(id: ID!): ReelAnalyticsResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@analytics")
-}
-
-extend type Mutation {
-  createReel(input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@create")
-  updateReel(id: ID!, input: ReelInput!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@update")
-  deleteReel(id: ID!): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@delete")
-
-  # Like/View mutations
-  likeReel(id: ID!): ReelLikeResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@like")
-  viewReel(id: ID!): ReelViewResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@view")
+  translations: [LocaleTranslationInput!]!
 }
 
 input FilterReelInput {
   id: ID
   title: String
   is_active: Boolean
+  locale: String
   sort_by: String
   sort_order: String
+  per_page: Int
+  page: Int
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+type ReelPaginator {
+  data: [Reel!]!
+  paginatorInfo: PaginatorInfo!
+}
+
+type PaginatorInfo {
+  count: Int!
+  currentPage: Int!
+  firstItem: Int
+  hasMorePages: Boolean!
+  lastItem: Int
+  lastPage: Int!
+  perPage: Int!
+  total: Int!
+}
+
+type Locale {
+  id: ID!
+  code: String!
+  name: String!
+  direction: String
+  is_default: Boolean
+}
+
+extend type Query {
+  """
+  Get paginated list of reels with optional filtering
+  """
+  reels(
+    input: FilterReelInput = { per_page: 10, page: 1 }
+  ): ReelPaginator! @field(resolver: "Webkul\\Reel\\GraphQL\\Resolvers\\ReelQueryResolver@list")
+
+  """
+  Get a single reel by ID
+  """
+  reel(
+    id: ID!
+    input: FilterReelInput = {}
+  ): Reel @field(resolver: "Webkul\\Reel\\GraphQL\\Resolvers\\ReelQueryResolver@find")
+
+  """
+  Get reels by product ID
+  """
+  reelsByProduct(
+    product_id: ID!
+    input: FilterReelInput = { per_page: 10, page: 1 }
+  ): ReelPaginator! @field(resolver: "Webkul\\Reel\\GraphQL\\Resolvers\\ReelQueryResolver@byProduct")
+
+  """
+  Get all available locales
+  """
+  reelLocales: [Locale!]! @field(resolver: "Webkul\\Reel\\GraphQL\\Resolvers\\ReelQueryResolver@getLocales")
+
+  """
+  Get analytics for a specific reel
+  """
+  reelAnalytics(
+    id: ID!
+  ): ReelAnalyticsResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Resolvers\\ReelQueryResolver@analytics")
+}
+
+extend type Mutation {
+  """
+  Create a new reel with translations
+  """
+  createReel(
+    input: ReelInput!
+  ): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@create")
+
+  """
+  Update an existing reel with translations
+  """
+  updateReel(
+    id: ID!
+    input: ReelInput!
+  ): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@update")
+
+  """
+  Delete a reel
+  """
+  deleteReel(
+    id: ID!
+  ): ReelResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelMutation@delete")
+
+  """
+  Like or unlike a reel
+  """
+  likeReel(
+    id: ID!
+  ): ReelLikeResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@like")
+
+  """
+  Record a view for a reel
+  """
+  viewReel(
+    id: ID!
+  ): ReelViewResponse @field(resolver: "Webkul\\Reel\\GraphQL\\Mutations\\ReelInteractionMutation@view")
 }
 
 type ReelResponse {
@@ -82,8 +194,8 @@ type ReelAnalyticsResponse {
 }
 
 type ReelAnalytics {
-  total_likes: Int
-  total_views: Int
-  unique_viewers: Int
-  engagement_rate: Float
+  total_likes: Int!
+  total_views: Int!
+  unique_viewers: Int!
+  engagement_rate: Float!
 }

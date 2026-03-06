@@ -1,22 +1,32 @@
 <x-admin::layouts>
     <x-slot:title>
         @lang('reel::app.admin.reels.title')
-        </x-slot>
+    </x-slot>
 
-        {!! view_render_event('bagisto.admin.reels.create.before') !!}
+    {!! view_render_event('bagisto.admin.reels.create.before') !!}
 
-        <v-reels>
-            <x-admin::datagrid :src="route('admin.reel.index')" ref="datagrid" />
-        </v-reels>
+    <v-reels>
+        <x-admin::datagrid :src="route('admin.reel.index')" ref="datagrid" />
+    </v-reels>
 
-        {!! view_render_event('bagisto.admin.reels.create.after') !!}
+    {!! view_render_event('bagisto.admin.reels.create.after') !!}
 
-        @pushOnce('scripts')
-        <!-- Sortable.js Library -->
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    @pushOnce('scripts')
+    <!-- Sortable.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
-        <script type="text/x-template" id="v-reels-template">
-            <div>
+    <!-- Pass locales to JavaScript -->
+    <script>
+        window.reelLocales = @json($locales->map(function($locale) {
+            return [
+                'code' => $locale->code,
+                'name' => $locale->name
+            ];
+        }));
+    </script>
+
+    <script type="text/x-template" id="v-reels-template">
+        <div>
             <!-- Header with Create and Save Sort Order Buttons -->
             <div class="flex items-center justify-between gap-4 mb-4 max-sm:flex-wrap">
                 <p class="text-xl font-bold text-gray-800 dark:text-white">
@@ -212,170 +222,227 @@
                         <x-slot:content>
                             <input type="hidden" name="id" v-model="reel.id">
 
-                            <!-- Title -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label class="required">
-                                    @lang('reel::app.admin.reels.fields.title')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="text"
-                                    name="title"
-                                    rules="required|max:255"
-                                    v-model="reel.title"
-                                    placeholder="{{ __('reel::app.admin.reels.fields.title') }}"
-                                />
-                                <x-admin::form.control-group.error control-name="title" />
-                            </x-admin::form.control-group>
+                            <!-- Language Tabs -->
+                            <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+                                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="languageTabs" role="tablist">
+                                    <li v-for="(locale, index) in locales" :key="locale.code" class="mr-2" role="presentation">
+                                        <button
+                                            class="inline-block p-4 rounded-t-lg border-b-2"
+                                            :class="activeLocale === locale.code ? 'border-blue-600 text-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
+                                            :id="locale.code + '-tab'"
+                                            type="button"
+                                            role="tab"
+                                            :aria-controls="'locale-' + locale.code"
+                                            :aria-selected="activeLocale === locale.code"
+                                            @click="switchLocale(locale.code)"
+                                        >
+                                            @{{ locale.name }}
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
 
-                            <!-- Caption -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.caption')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="textarea"
-                                    name="caption"
-                                    v-model="reel.caption"
-                                    placeholder="{{__('reel::app.admin.reels.fields.caption')}}"
-                                    rows="3"
-                                />
-                                <x-admin::form.control-group.error control-name="caption" />
-                            </x-admin::form.control-group>
-
-                            <!-- Product -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.product')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="select"
-                                    name="product_id"
-                                    v-model="reel.product_id"
-                                    :rules="''"
-                                    placeholder="{{ __('reel::app.admin.reels.fields.product') }}"
-                                >
-                                    <option value="">— @lang('reel::app.admin.reels.datagrid.na') —</option>
-                                    <option v-for="product in products" :value="product.id" :key="product.id">
-                                        @{{ product.name }}
-                                    </option>
-                                </x-admin::form.control-group.control>
-                                <x-admin::form.control-group.error control-name="product_id" />
-                            </x-admin::form.control-group>
-
-                            <!-- Video Upload -->
-                            <x-admin::form.control-group>
-                                <div v-if="reel.video_url" class="mb-2">
-                                    <video
-                                        :src="reel.video_url"
-                                        class="object-cover w-32 h-32 mb-2 rounded-lg"
-                                        controls
-                                    ></video>
-                                    <button
-                                        type="button"
-                                        @click="removeVideo"
-                                        class="text-sm text-red-600 hover:text-red-800"
+                            <!-- Language Content - FIXED: Using standard HTML inputs instead of x-admin components for Vue bindings -->
+                            <div id="languageTabContent">
+                                <div v-for="(locale, index) in locales" :key="locale.code">
+                                    <div
+                                        v-show="activeLocale === locale.code"
+                                        :id="'locale-' + locale.code"
+                                        role="tabpanel"
+                                        :aria-labelledby="locale.code + '-tab'"
                                     >
-                                        @lang('reel::app.admin.reels.messages.remove-video')
-                                    </button>
+                                        <!-- Title (Translatable) -->
+                                        <div class="mb-4">
+                                            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300 required">
+                                                @lang('reel::app.admin.reels.fields.title')
+                                                <span v-text="'(' + locale.name + ')'"></span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                :name="locale.code + '[title]'"
+                                                v-model="reel.translations[locale.code].title"
+                                                class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                                                required
+                                            />
+                                            <div v-if="errors && errors[locale.code + '.title']" class="text-red-600 text-xs mt-1">
+                                                <span v-for="error in errors[locale.code + '.title']" v-text="error"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Caption (Translatable) -->
+                                        <div class="mb-4">
+                                            <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                @lang('reel::app.admin.reels.fields.caption')
+                                                <span v-text="'(' + locale.name + ')'"></span>
+                                            </label>
+                                            <textarea
+                                                :name="locale.code + '[caption]'"
+                                                v-model="reel.translations[locale.code].caption"
+                                                class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                                                rows="3"
+                                            ></textarea>
+                                            <div v-if="errors && errors[locale.code + '.caption']" class="text-red-600 text-xs mt-1">
+                                                <span v-for="error in errors[locale.code + '.caption']" v-text="error"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Non-Translatable Fields -->
+                            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
+                                    @lang('reel::app.admin.reels.general-settings')
+                                </h3>
+
+                                <!-- Product - FIXED: Using standard HTML select -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.fields.product')
+                                    </label>
+                                    <select
+                                        name="product_id"
+                                        v-model="reel.product_id"
+                                        class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                                    >
+                                        <option value="">— @lang('reel::app.admin.reels.datagrid.na') —</option>
+                                        <option v-for="product in products" :value="product.id" :key="product.id">
+                                            @{{ product.name }}
+                                        </option>
+                                    </select>
+                                    <div v-if="errors && errors.product_id" class="text-red-600 text-xs mt-1">
+                                        <span v-for="error in errors.product_id" v-text="error"></span>
+                                    </div>
                                 </div>
 
-                                <input
-                                    type="file"
-                                    name="video"
-                                    ref="videoInput"
-                                    accept="video/mp4,video/quicktime,video/x-msvideo"
-                                    @change="handleVideoUpload"
-                                    :rules="reel.id ? '' : 'required'"
-                                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                                />
-                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                                    @lang('reel::app.admin.reels.messages.video-size')
-                                    <span v-if="reel.id"> (Optional for updates)</span>
-                                </p>
-                                <x-admin::form.control-group.error control-name="video" />
-                            </x-admin::form.control-group>
+                                <!-- Video Upload - FIXED: Using standard HTML input -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300 required">
+                                        @lang('reel::app.admin.reels.fields.video')
+                                    </label>
 
-                            <!-- Thumbnail Upload -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.thumbnail')
-                                </x-admin::form.control-group.label>
+                                    <div v-if="reel.video_url" class="mb-2">
+                                        <video
+                                            :src="reel.video_url"
+                                            class="object-cover w-32 h-32 mb-2 rounded-lg"
+                                            controls
+                                        ></video>
+                                        <button
+                                            type="button"
+                                            @click="removeVideo"
+                                            class="text-sm text-red-600 hover:text-red-800"
+                                        >
+                                            @lang('reel::app.admin.reels.messages.remove-video')
+                                        </button>
+                                    </div>
 
-                                <div v-if="reel.thumbnail_url" class="mb-2">
-                                    <img
-                                        :src="reel.thumbnail_url"
-                                        class="object-cover w-32 h-32 mb-2 rounded-lg"
-                                        :alt="reel.title"
-                                    >
-                                    <button
-                                        type="button"
-                                        @click="removeThumbnail"
-                                        class="text-sm text-red-600 hover:text-red-800"
-                                    >
-                                        @lang('reel::app.admin.reels.messages.remove-thumbnail')
-                                    </button>
+                                    <input
+                                        type="file"
+                                        name="video"
+                                        ref="videoInput"
+                                        accept="video/mp4,video/quicktime,video/x-msvideo"
+                                        @change="handleVideoUpload"
+                                        :required="!reel.id"
+                                        class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                                    />
+                                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.messages.video-size')
+                                        <span v-if="reel.id"> (@lang('reel::app.admin.reels.messages.optional-update'))</span>
+                                    </p>
+                                    <div v-if="errors && errors.video" class="text-red-600 text-xs mt-1">
+                                        <span v-for="error in errors.video" v-text="error"></span>
+                                    </div>
                                 </div>
 
-                                <input
-                                    type="file"
-                                    name="thumbnail"
-                                    accept="image/*"
-                                    @change="handleThumbnailUpload"
-                                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                                />
-                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                                    @lang('reel::app.admin.reels.messages.thumbnail-size')
-                                </p>
-                                <x-admin::form.control-group.error control-name="thumbnail" />
-                            </x-admin::form.control-group>
+                                <!-- Thumbnail Upload - FIXED: Using standard HTML input -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.fields.thumbnail')
+                                    </label>
 
-                            <!-- Duration -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.duration')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="number"
-                                    name="duration"
-                                    v-model="reel.duration"
-                                    placeholder="@lang('reel::app.admin.reels.fields.duration')"
-                                    step="0.01"
-                                    min="0"
-                                />
-                                <x-admin::form.control-group.error control-name="duration" />
-                            </x-admin::form.control-group>
+                                    <div v-if="reel.thumbnail_url" class="mb-2">
+                                        <img
+                                            :src="reel.thumbnail_url"
+                                            class="object-cover w-32 h-32 mb-2 rounded-lg"
+                                            :alt="reel.title"
+                                        >
+                                        <button
+                                            type="button"
+                                            @click="removeThumbnail"
+                                            class="text-sm text-red-600 hover:text-red-800"
+                                        >
+                                            @lang('reel::app.admin.reels.messages.remove-thumbnail')
+                                        </button>
+                                    </div>
 
-                            <!-- Status -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.is_active')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="select"
-                                    name="is_active"
-                                    v-model="reel.is_active"
-                                >
-                                    <option value="1">@lang('reel::app.admin.reels.status.active')</option>
-                                    <option value="0">@lang('reel::app.admin.reels.status.inactive')</option>
-                                </x-admin::form.control-group.control>
-                                <x-admin::form.control-group.error control-name="is_active" />
-                            </x-admin::form.control-group>
+                                    <input
+                                        type="file"
+                                        name="thumbnail"
+                                        accept="image/*"
+                                        @change="handleThumbnailUpload"
+                                        class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                                    />
+                                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.messages.thumbnail-size')
+                                    </p>
+                                    <div v-if="errors && errors.thumbnail" class="text-red-600 text-xs mt-1">
+                                        <span v-for="error in errors.thumbnail" v-text="error"></span>
+                                    </div>
+                                </div>
 
-                            <!-- Sort Order -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.label>
-                                    @lang('reel::app.admin.reels.fields.sort_order')
-                                </x-admin::form.control-group.label>
-                                <x-admin::form.control-group.control
-                                    type="number"
-                                    name="sort_order"
-                                    v-model="reel.sort_order"
-                                    placeholder="@lang('reel::app.admin.reels.fields.sort_order')"
-                                    min="0"
-                                    disabled
-                                />
-                                <x-admin::form.control-group.error control-name="sort_order" />
-                            </x-admin::form.control-group>
+                                <!-- Duration -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.fields.duration')
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="duration"
+                                        v-model="reel.duration"
+                                        placeholder="@lang('reel::app.admin.reels.fields.duration')"
+                                        step="0.01"
+                                        min="0"
+                                        class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                                    />
+                                    <div v-if="errors && errors.duration" class="text-red-600 text-xs mt-1">
+                                        <span v-for="error in errors.duration" v-text="error"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.fields.is_active')
+                                    </label>
+                                    <select
+                                        name="is_active"
+                                        v-model="reel.is_active"
+                                        class="w-full px-3 py-2 border rounded dark:bg-gray-800"
+                                    >
+                                        <option value="1">@lang('reel::app.admin.reels.status.active')</option>
+                                        <option value="0">@lang('reel::app.admin.reels.status.inactive')</option>
+                                    </select>
+                                    <div v-if="errors && errors.is_active" class="text-red-600 text-xs mt-1">
+                                        <span v-for="error in errors.is_active" v-text="error"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Sort Order -->
+                                <div class="mb-4">
+                                    <label class="block mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        @lang('reel::app.admin.reels.fields.sort_order')
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="sort_order"
+                                        v-model="reel.sort_order"
+                                        placeholder="@lang('reel::app.admin.reels.fields.sort_order')"
+                                        min="0"
+                                        disabled
+                                        class="w-full px-3 py-2 border rounded dark:bg-gray-800 bg-gray-100"
+                                    />
+                                </div>
+                            </div>
                         </x-slot>
 
                         <x-slot:footer>
@@ -402,23 +469,24 @@
         </div>
     </script>
 
-        <script type="module">
-            app.component('v-reels', {
+    <script type="module">
+        app.component('v-reels', {
             template: '#v-reels-template',
 
             data() {
                 return {
                     reel: {
                         id: null,
-                        title: '',
-                        caption: '',
                         product_id: null,
                         video_url: '',
                         thumbnail_url: '',
                         duration: 0,
                         is_active: 1,
                         sort_order: 0,
+                        translations: {}
                     },
+                    locales: window.reelLocales || [],
+                    activeLocale: window.reelLocales && window.reelLocales.length > 0 ? window.reelLocales[0].code : 'en',
                     products: [],
                     productsLoading: false,
                     previewVideoUrl: '',
@@ -428,6 +496,7 @@
                     sortableInstance: null,
                     originalOrder: [],
                     currentOrder: [],
+                    errors: {}
                 }
             },
 
@@ -438,6 +507,7 @@
             },
 
             mounted() {
+                this.initializeTranslations();
                 this.fetchProducts();
                 setTimeout(() => {
                     this.initializeSortable();
@@ -445,6 +515,26 @@
             },
 
             methods: {
+                initializeTranslations() {
+                    // Initialize translations object for all locales
+                    if (!this.reel.translations) {
+                        this.reel.translations = {};
+                    }
+
+                    this.locales.forEach(locale => {
+                        if (!this.reel.translations[locale.code]) {
+                            this.reel.translations[locale.code] = {
+                                title: '',
+                                caption: ''
+                            };
+                        }
+                    });
+                },
+
+                switchLocale(localeCode) {
+                    this.activeLocale = localeCode;
+                },
+
                 async fetchProducts() {
                     this.productsLoading = true;
                     try {
@@ -452,7 +542,6 @@
 
                         if (response.data.success) {
                             this.products = response.data.data || [];
-                            console.log('Products loaded:', this.products.length);
                         } else {
                             console.error('Error fetching products:', response.data.message);
                             this.products = [];
@@ -465,14 +554,11 @@
                     }
                 },
 
-                // Calculate next sort order from current records
                 calculateNextSortOrder() {
-                    // Get all rows from the datagrid
                     const rows = document.querySelectorAll('.sortable-item');
                     let maxSortOrder = 0;
 
                     if (rows.length > 0) {
-                        // Extract sort orders from visible rows
                         rows.forEach(row => {
                             const cells = row.children;
                             if (cells.length > 8) {
@@ -488,26 +574,29 @@
                     return maxSortOrder + 1;
                 },
 
-                // Open create modal with auto-calculated sort order
                 openCreateModal() {
-                    // Calculate next sort order
                     const nextSortOrder = this.calculateNextSortOrder();
 
                     this.reel = {
                         id: null,
-                        title: '',
-                        caption: '',
                         product_id: null,
                         video_url: '',
                         thumbnail_url: '',
                         duration: 0,
                         is_active: 1,
-                        sort_order: nextSortOrder, // Auto-set to next number
+                        sort_order: nextSortOrder,
+                        translations: {}
                     };
 
-                    console.log('Auto-calculated sort order:', nextSortOrder);
+                    this.errors = {};
 
-                    // Fetch products if not already loaded
+                    // Initialize translations
+                    this.initializeTranslations();
+
+                    if (this.locales.length > 0) {
+                        this.activeLocale = this.locales[0].code;
+                    }
+
                     if (this.products.length === 0) {
                         this.fetchProducts();
                     }
@@ -522,20 +611,22 @@
                         thumbnailInput.value = '';
                     }
 
-                    // Open modal
                     this.$refs.reelUpdateOrCreateModal.toggle();
                 },
 
                 async createOrUpdate(params, { resetForm, setErrors }) {
                     this.isLoading = true;
+                    this.errors = {};
 
                     const formData = new FormData();
 
-                    // Add all form data
-                    formData.append('title', this.reel.title);
-                    formData.append('caption', this.reel.caption);
+                    // Add translations
+                    Object.keys(this.reel.translations).forEach(locale => {
+                        formData.append(`${locale}[title]`, this.reel.translations[locale].title || '');
+                        formData.append(`${locale}[caption]`, this.reel.translations[locale].caption || '');
+                    });
 
-                    // Add product_id if exists
+                    // Add non-translatable fields
                     if (this.reel.product_id !== undefined && this.reel.product_id !== null) {
                         formData.append('product_id', this.reel.product_id);
                     }
@@ -586,7 +677,8 @@
                     } catch (error) {
                         console.error('Error:', error);
                         if (error.response?.status === 422) {
-                            setErrors(error.response.data.errors);
+                            this.errors = error.response.data.errors || {};
+                            setErrors(this.errors);
                         } else {
                             this.$emitter.emit('add-flash', {
                                 type: 'error',
@@ -609,22 +701,47 @@
                             throw new Error('No data received from server');
                         }
 
-                        // If products are not loaded yet, fetch them
                         if (this.products.length === 0) {
                             await this.fetchProducts();
                         }
 
+                        // Initialize translations from response
+                        const translations = {};
+                        if (data.translations && data.translations.length > 0) {
+                            data.translations.forEach(translation => {
+                                translations[translation.locale] = {
+                                    title: translation.title || '',
+                                    caption: translation.caption || ''
+                                };
+                            });
+                        }
+
+                        // Ensure all locales have translations
+                        this.locales.forEach(locale => {
+                            if (!translations[locale.code]) {
+                                translations[locale.code] = {
+                                    title: '',
+                                    caption: ''
+                                };
+                            }
+                        });
+
                         this.reel = {
                             id: data.id,
-                            title: data.title || '',
-                            caption: data.caption || '',
                             product_id: data.product_id || null,
                             video_url: data.video_url || data.video_path || '',
                             thumbnail_url: data.thumbnail_url || data.thumbnail_path || '',
                             duration: data.duration || 0,
                             is_active: data.is_active ?? 1,
                             sort_order: data.sort_order || 0,
+                            translations: translations
                         };
+
+                        this.errors = {};
+
+                        if (this.locales.length > 0) {
+                            this.activeLocale = this.locales[0].code;
+                        }
 
                         this.$refs.reelUpdateOrCreateModal.toggle();
                     } catch (error) {
@@ -649,12 +766,10 @@
                         return;
                     }
 
-                    // Destroy existing instance
                     if (this.sortableInstance) {
                         this.sortableInstance.destroy();
                     }
 
-                    // Initialize Sortable
                     this.sortableInstance = new Sortable(container, {
                         animation: 150,
                         handle: '.drag-handle',
@@ -675,7 +790,6 @@
                         }
                     });
 
-                    // Store initial order
                     this.originalOrder = this.getCurrentOrder();
                     this.currentOrder = [...this.originalOrder];
                 },
@@ -702,7 +816,6 @@
 
                     const items = container.querySelectorAll('.sortable-item');
                     items.forEach((item, index) => {
-                        // Find sort order cell (assuming it's the 9th cell, index 8)
                         const cells = item.children;
                         if (cells.length > 8) {
                             const sortOrderCell = cells[8];
@@ -733,16 +846,13 @@
 
                         this.showSaveButton = false;
 
-                        // Reset and refresh datagrid
                         this.sortableInstance.destroy();
                         this.sortableInstance = null;
                         this.originalOrder = [];
                         this.currentOrder = [];
 
-                        // Refresh datagrid
                         await this.$refs.datagrid.get();
 
-                        // Reinitialize sortable after data loads
                         setTimeout(() => {
                             this.initializeSortable();
                         }, 500);
@@ -781,7 +891,6 @@
 
                         this.reel.video_url = URL.createObjectURL(file);
 
-                        // Extract duration from video
                         const video = document.createElement('video');
                         video.preload = 'metadata';
                         video.onloadedmetadata = () => {
@@ -843,94 +952,102 @@
         });
     </script>
 
-        <style>
-            /* Drag & Drop Styles */
-            .sortable-ghost {
-                opacity: 0.4;
-                background-color: #f3f4f6 !important;
-            }
+    <style>
+        /* Drag & Drop Styles */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #f3f4f6 !important;
+        }
 
-            .dark .sortable-ghost {
-                background-color: #374151 !important;
-            }
+        .dark .sortable-ghost {
+            background-color: #374151 !important;
+        }
 
-            .sortable-chosen {
-                background-color: #f9fafb !important;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            }
+        .sortable-chosen {
+            background-color: #f9fafb !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
 
-            .dark .sortable-chosen {
-                background-color: #1f2937 !important;
-            }
+        .dark .sortable-chosen {
+            background-color: #1f2937 !important;
+        }
 
-            .sortable-drag {
-                opacity: 0.9;
-                background-color: white !important;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                z-index: 9999 !important;
-            }
+        .sortable-drag {
+            opacity: 0.9;
+            background-color: white !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999 !important;
+        }
 
-            .dark .sortable-drag {
-                background-color: #111827 !important;
-            }
+        .dark .sortable-drag {
+            background-color: #111827 !important;
+        }
 
-            .drag-handle {
-                cursor: move !important;
-                user-select: none;
-                transition: all 0.2s;
-            }
+        .drag-handle {
+            cursor: move !important;
+            user-select: none;
+            transition: all 0.2s;
+        }
 
-            .drag-handle:hover {
-                color: #6b7280 !important;
-                transform: scale(1.1);
-            }
+        .drag-handle:hover {
+            color: #6b7280 !important;
+            transform: scale(1.1);
+        }
 
-            .dark .drag-handle:hover {
-                color: #d1d5db !important;
-            }
+        .dark .drag-handle:hover {
+            color: #d1d5db !important;
+        }
 
-            .dragging-active {
-                cursor: grabbing !important;
-            }
+        .dragging-active {
+            cursor: grabbing !important;
+        }
 
-            .dragging-active * {
-                cursor: grabbing !important;
-            }
+        .dragging-active * {
+            cursor: grabbing !important;
+        }
 
-            /* Row hover effect */
-            .row:hover {
-                background-color: #f9fafb;
-            }
+        /* Row hover effect */
+        .row:hover {
+            background-color: #f9fafb;
+        }
 
-            .dark .row:hover {
-                background-color: #1f2937;
-            }
+        .dark .row:hover {
+            background-color: #1f2937;
+        }
 
-            /* Action buttons */
-            .icon-edit,
-            .icon-delete {
-                margin: 0 4px;
-                padding: 4px;
-                border-radius: 4px;
-                transition: all 0.2s;
-            }
+        /* Action buttons */
+        .icon-edit,
+        .icon-delete {
+            margin: 0 4px;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
 
-            .icon-edit:hover {
-                background-color: rgba(59, 130, 246, 0.1);
-                color: #3b82f6;
-            }
+        .icon-edit:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
 
-            .icon-delete:hover {
-                background-color: rgba(239, 68, 68, 0.1);
-                color: #ef4444;
-            }
+        .icon-delete:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
 
-            /* Header drag handle placeholder */
-            .drag-handle-placeholder {
-                display: inline-block;
-                visibility: hidden;
-            }
+        /* Header drag handle placeholder */
+        .drag-handle-placeholder {
+            display: inline-block;
+            visibility: hidden;
+        }
 
-        </style>
-        @endPushOnce
+        /* Language tabs */
+        #languageTabs {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dark #languageTabs {
+            border-bottom-color: #374151;
+        }
+    </style>
+    @endPushOnce
 </x-admin::layouts>
