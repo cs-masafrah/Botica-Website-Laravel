@@ -159,8 +159,9 @@ class Reel extends Model implements ReelContract
             $admin = auth()->guard('admin-api')->user();
         }
 
+        // If no user is authenticated, return false (not liked)
         if (!$customer && !$admin) {
-            throw new \Exception('Authentication required to like a reel. Please login as customer or admin.');
+            return false;
         }
 
         $userId = $customer ? $customer->id : $admin->id;

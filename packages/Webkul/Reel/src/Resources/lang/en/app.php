@@ -22,6 +22,8 @@ return [
         'reels' => [
             'title'   => 'Reels',
             'content' => 'Manage short video clips',
+            "general-settings" => 'General Settings',
+
 
             'create' => [
                 'title' => 'Create Reel',

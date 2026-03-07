@@ -22,6 +22,7 @@ return [
         'reels' => [
             'title'   => 'ريلز',
             'content' => 'إدارة مقاطع الفيديو القصيرة',
+            "general-settings" => 'اعدادات عامة',
 
             'create' => [
                 'title' => 'إنشاء ريل',

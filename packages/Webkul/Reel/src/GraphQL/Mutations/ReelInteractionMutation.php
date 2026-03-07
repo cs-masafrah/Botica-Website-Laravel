@@ -198,7 +198,7 @@ class ReelInteractionMutation
             }
 
             if (!$customer && !$admin) {
-                throw new \Exception('Authentication required to view analytics. Please login.');
+                return false;
             }
 
             $userType = $customer ? 'customer' : 'admin';
