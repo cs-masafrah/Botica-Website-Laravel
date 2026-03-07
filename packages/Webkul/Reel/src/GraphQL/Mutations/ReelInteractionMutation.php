@@ -24,14 +24,11 @@ class ReelInteractionMutation
             // Check customer authentication
             $customer = auth()->guard('customer')->user();
             if (!$customer) {
-                // Try other possible guards
                 $customer = auth()->guard('api')->user();
             }
 
-            // // Check admin authentication
             $admin = auth()->guard('admin')->user();
             if (!$admin) {
-                // Try other possible admin guards
                 $admin = auth()->guard('admin-api')->user();
             }
 
@@ -40,7 +37,6 @@ class ReelInteractionMutation
             }
 
             $userId = $customer ? $customer->id : $admin->id;
-            $userType = $customer ? 'customer' : 'admin';
 
             // Check if already liked
             $existingLike = ReelLike::where([
@@ -69,10 +65,19 @@ class ReelInteractionMutation
 
             DB::commit();
 
+            // Refresh the reel to get updated counts
+            $reel = $reel->fresh();
+
+            // IMPORTANT: Set the is_liked attribute manually
+            $reel->setAttribute('is_liked', $liked);
+
+            // Also, if you have an accessor, make sure it returns the correct value
+            // You might need to override the getIsLikedAttribute method temporarily
+
             return [
                 'success' => true,
                 'message' => $message,
-                'reel' => $reel->fresh(),
+                'reel' => $reel,
                 'liked' => $liked,
             ];
         } catch (\Exception $e) {
@@ -100,26 +105,21 @@ class ReelInteractionMutation
             // Get customer ID if authenticated
             $customerId = null;
 
-            // Check customer authentication
             $customer = auth()->guard('customer')->user();
             if (!$customer) {
-                // Try other possible guards
                 $customer = auth()->guard('api')->user();
             }
 
-            // // Check admin authentication
             $admin = auth()->guard('admin')->user();
             if (!$admin) {
-                // Try other possible admin guards
                 $admin = auth()->guard('admin-api')->user();
             }
 
             if (!$customer && !$admin) {
-                throw new \Exception('Authentication required to like a reel. Please login as customer or admin.');
+                throw new \Exception('Authentication required to view a reel. Please login as customer or admin.');
             }
 
             $customerId = $customer ? $customer->id : $admin->id;
-            $userType = $customer ? 'customer' : 'admin';
 
             // Check if this view should be counted (prevent duplicate views within 1 hour)
             $viewExists = ReelView::where('reel_id', $reel->id)
@@ -127,7 +127,6 @@ class ReelInteractionMutation
                     if ($customerId) {
                         $query->where('customer_id', $customerId);
                     } else {
-                        // For guests, check IP and session
                         $query->where('ip_address', $request->ip())
                             ->where('session_id', session()->getId());
                     }
@@ -138,7 +137,6 @@ class ReelInteractionMutation
             if (!$viewExists) {
                 DB::beginTransaction();
 
-                // Record view
                 ReelView::create([
                     'reel_id' => $reel->id,
                     'customer_id' => $customerId,
@@ -147,17 +145,26 @@ class ReelInteractionMutation
                     'session_id' => session()->getId(),
                 ]);
 
-                // Increment view count
                 $reel->increment('views_count');
 
                 DB::commit();
             }
 
+            $reel = $reel->fresh();
+
+            // Also check if the user has liked this reel
+            $isLiked = ReelLike::where([
+                'reel_id' => $reel->id,
+                'customer_id' => $customerId,
+            ])->exists();
+
+            $reel->setAttribute('is_liked', $isLiked);
+
             return [
                 'success' => true,
                 'message' => 'View recorded successfully.',
-                'reel' => $reel->fresh(),
-                'views_count' => $reel->fresh()->views_count,
+                'reel' => $reel,
+                'views_count' => $reel->views_count,
             ];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -180,39 +187,29 @@ class ReelInteractionMutation
             $id = $args['id'];
             $reel = Reel::findOrFail($id);
 
-            // Check customer authentication
             $customer = auth()->guard('customer')->user();
             if (!$customer) {
-                // Try other possible guards
                 $customer = auth()->guard('api')->user();
             }
 
-            // // Check admin authentication
             $admin = auth()->guard('admin')->user();
             if (!$admin) {
-                // Try other possible admin guards
                 $admin = auth()->guard('admin-api')->user();
             }
 
             if (!$customer && !$admin) {
-                throw new \Exception('Authentication required to like a reel. Please login as customer or admin.');
+                throw new \Exception('Authentication required to view analytics. Please login.');
             }
 
-            $userId = $customer ? $customer->id : $admin->id;
             $userType = $customer ? 'customer' : 'admin';
 
-            // Check if user is admin (only admins can see analytics)
             if ($userType != 'admin') {
                 throw new \Exception('Unauthorized. Only administrators can view analytics.');
             }
 
-            // Get likes count
             $likes = ReelLike::where('reel_id', $reel->id)->count();
-
-            // Get views count
             $views = ReelView::where('reel_id', $reel->id)->count();
 
-            // Get unique viewers
             $uniqueViewers = ReelView::where('reel_id', $reel->id)
                 ->select(DB::raw('COUNT(DISTINCT COALESCE(customer_id, ip_address, session_id)) as unique_count'))
                 ->value('unique_count') ?? 0;

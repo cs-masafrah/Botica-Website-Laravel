@@ -30,7 +30,7 @@ class Reel extends Model implements ReelContract
         'product_id'
     ];
 
-    protected $appends = ['video_url', 'thumbnail_url', 'is_liked','title', 'caption'];
+    protected $appends = ['video_url', 'thumbnail_url', 'is_liked', 'title', 'caption'];
 
     protected $casts = [
         'is_active' => 'boolean',
@@ -39,7 +39,7 @@ class Reel extends Model implements ReelContract
         'likes_count' => 'integer',
     ];
 
-     protected $with = ['translations'];
+    protected $with = ['translations'];
     /**
      * Get the translations for the reel.
      */
@@ -143,16 +143,39 @@ class Reel extends Model implements ReelContract
 
     public function getIsLikedAttribute()
     {
+        // Check customer authentication
+
+        // Check customer authentication
         $customer = auth()->guard('customer')->user();
+        if (!$customer) {
+            // Try other possible guards
+            $customer = auth()->guard('api')->user();
+        }
+
+        // // Check admin authentication
         $admin = auth()->guard('admin')->user();
+        if (!$admin) {
+            // Try other possible admin guards
+            $admin = auth()->guard('admin-api')->user();
+        }
 
         if (!$customer && !$admin) {
-            return false;
+            throw new \Exception('Authentication required to like a reel. Please login as customer or admin.');
         }
 
         $userId = $customer ? $customer->id : $admin->id;
+        $userType = $customer ? 'customer' : 'admin';
 
-        return $this->likes()->where('customer_id', $userId)->exists();
+        if ($userType == 'customer') {
+            return $this->likes()->where('customer_id', $userId)->exists();
+        }
+
+        // Check admin authentication
+        if ($userType == 'admin') {
+            return $this->likes()->where('customer_id', $userId)->exists();
+        }
+
+        return false;
     }
 
     // GraphQL helper methods
