@@ -154,3 +154,90 @@ extend type Query {
     ): JSON
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
 }
+
+
+"""
+Input for products by attribute query with EAV sorting
+"""
+input ProductsByAttributeEavInput {
+    """
+    Attribute code to filter by (e.g., 'brand', 'color', 'size')
+    """
+    attribute: String!
+
+    """
+    Value to filter by
+    """
+    value: String!
+
+    """
+    Category IDs or slugs
+    """
+    categories: [String!]
+
+    """
+    Minimum price
+    """
+    min_price: Float
+
+    """
+    Maximum price
+    """
+    max_price: Float
+
+    """
+    In stock only
+    """
+    in_stock: Boolean
+
+    """
+    Sort by field
+    Can be:
+    - Direct columns: id, created_at, updated_at
+    - EAV attributes: name, sku, price, quantity, weight, status, views, short_description, description, url_key, new, featured, visible_individually
+    """
+    sortBy: String = "created_at"
+
+    """
+    Sort order: 'asc' for ascending, 'desc' for descending
+    """
+    sortOrder: String = "desc"
+
+    """
+    Items per page
+    """
+    perPage: Int = 10
+
+    """
+    Page number
+    """
+    page: Int = 1
+}
+
+"""
+Available sort fields result
+"""
+type AvailableSortFieldsResult {
+    direct_columns: [String!]!
+    eav_attributes: [String!]!
+    all_available_fields: [String!]!
+    note: String
+}
+
+extend type Query {
+    """
+    NEW API: Get products filtered by attribute value with EAV-compatible sorting
+    This query properly handles sorting by EAV attributes like name, price, etc.
+    """
+    productsByAttributeEav(
+        input: ProductsByAttributeEavInput!
+    ): ProductPaginator
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery")
+
+    """
+    NEW API: Get available sort fields for productsByAttributeEav
+    Use this to see what fields you can sort by
+    """
+    getAvailableSortFields: AvailableSortFieldsResult!
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery@getAvailableSortFields")
+}
