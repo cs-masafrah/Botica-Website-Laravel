@@ -105,7 +105,7 @@
             "Webkul\\AlQudsShipping\\": "packages/Webkul/AlQudsShipping/src",
             "Webkul\\ILShipping\\": "packages/Webkul/ILShipping/src",
             "Webkul\\AbandonedCart\\": "packages/Webkul/AbandonedCart/src",
-            "Webkul\\CustomGraphQL\\": "packages/Webkul/CustomGraphQL/src/"
+            "Webkul\\CustomGraphQL\\": "packages/Webkul/CustomGraphQL/src"
         }
     },
     "autoload-dev": {
