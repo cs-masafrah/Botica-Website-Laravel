@@ -103,8 +103,7 @@
             "Webkul\\Reel\\": "packages/Webkul/Reel/src",
             "Webkul\\AlQudsShipping\\": "packages/Webkul/AlQudsShipping/src",
             "Webkul\\ILShipping\\": "packages/Webkul/ILShipping/src",
-            "Webkul\\AbandonedCart\\": "packages/Webkul/AbandonedCart/src",
-            "Webkul\\CustomGraphQL\\": "packages/Webkul/CustomGraphQL/src"
+            "Webkul\\AbandonedCart\\": "packages/Webkul/AbandonedCart/src"
         }
     },
     "autoload-dev": {
