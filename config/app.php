@@ -1,4 +1,4 @@
-'providers'<?php
+<?php
 
 return [
 
