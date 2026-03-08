@@ -49,6 +49,6 @@ return [
     Webkul\AlQudsShipping\Providers\AlQudsShippingServiceProvider::class,
     Webkul\ILShipping\Providers\ILShippingServiceProvider::class,
     Webkul\AbandonedCart\Providers\AbandonedCartServiceProvider::class,
-
+    Webkul\CustomGraphQL\Providers\CustomGraphQLServiceProvider::class
 
 ];
