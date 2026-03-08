@@ -16,7 +16,7 @@ class CustomGraphQLServiceProvider extends ServiceProvider
     public function register()
     {
         // Debug: Log that provider is loading
-        \Log::info('CustomGraphQLServiceProvider is loading');
+        // \Log::info('CustomGraphQLServiceProvider is loading');
 
         $this->app->bind(BaseHomePageQuery::class, function ($app) {
             return $app->make(CustomHomePageQuery::class);
@@ -31,6 +31,6 @@ class CustomGraphQLServiceProvider extends ServiceProvider
     public function boot()
     {
         // Debug: Log boot method
-        \Log::info('CustomGraphQLServiceProvider boot method called');
+        // \Log::info('CustomGraphQLServiceProvider boot method called');
     }
 }
