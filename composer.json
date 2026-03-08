@@ -41,7 +41,7 @@
         "maatwebsite/excel": "^3.1.46",
         "mpdf/mpdf": "^8.2",
         "nesbot/carbon": "^2.72.2",
-        "opcodesio/log-viewer": "^3.21",
+        "opcodesio/log-viewer": "^3.22",
         "openai-php/laravel": "^0.10.1",
         "paypal/paypal-checkout-sdk": "1.0.1",
         "predis/predis": "^2.2",
@@ -104,7 +104,8 @@
             "Webkul\\Reel\\": "packages/Webkul/Reel/src",
             "Webkul\\AlQudsShipping\\": "packages/Webkul/AlQudsShipping/src",
             "Webkul\\ILShipping\\": "packages/Webkul/ILShipping/src",
-            "Webkul\\AbandonedCart\\": "packages/Webkul/AbandonedCart/src"
+            "Webkul\\AbandonedCart\\": "packages/Webkul/AbandonedCart/src",
+            "Webkul\\CustomGraphQL\\": "packages/Webkul/CustomGraphQL/src/"
         }
     },
     "autoload-dev": {
