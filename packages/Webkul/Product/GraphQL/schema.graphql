@@ -1,5 +1,85 @@
 """
-Input for products by attribute query
+Single attribute filter input
+"""
+input AttributeFilterInput {
+    """
+    Attribute code to filter by (e.g., 'brand', 'color', 'size')
+    """
+    attribute: String!
+
+    """
+    Value to filter by - can be a single value or array of values
+    """
+    value: [String!]!
+
+    """
+    Operator for filtering: 'eq', 'in', 'like', 'gt', 'lt', 'gte', 'lte'
+    Default: 'eq' for single value, 'in' for multiple values
+    """
+    operator: String
+}
+
+"""
+Input for products by attribute query with EAV sorting
+"""
+input ProductsByAttributeEavInput {
+    """
+    Array of attribute filters
+    If empty or not provided, returns all products
+    """
+    filters: [AttributeFilterInput!]
+
+    """
+    Category IDs or slugs
+    """
+    categories: [String!]
+
+    """
+    Minimum price
+    """
+    min_price: Float
+
+    """
+    Maximum price
+    """
+    max_price: Float
+
+    """
+    In stock only
+    """
+    in_stock: Boolean
+
+    """
+    Search term for product name or description
+    """
+    search: String
+
+    """
+    Sort by field
+    Can be:
+    - Direct columns: id, created_at, updated_at
+    - EAV attributes: name, sku, price, quantity, weight, status, views, short_description, description, url_key, new, featured, visible_individually
+    """
+    sortBy: String = "created_at"
+
+    """
+    Sort order: 'asc' for ascending, 'desc' for descending
+    """
+    sortOrder: String = "desc"
+
+    """
+    Items per page
+    """
+    perPage: Int = 10
+
+    """
+    Page number
+    """
+    page: Int = 1
+}
+
+"""
+Input for products by attribute query (Simple version)
 """
 input ProductsByAttributeInput {
     """
@@ -8,12 +88,12 @@ input ProductsByAttributeInput {
     attribute: String!
 
     """
-    Value to filter by
+    Value to filter by (single value)
     """
     value: String!
 
     """
-    Category IDs or slugs
+    Category IDs
     """
     categories: [String!]
 
@@ -53,6 +133,17 @@ input ProductsByAttributeInput {
     page: Int = 1
 }
 
+extend type Query {
+    """
+    Get products filtered by a single attribute value
+    This is a simplified version for backward compatibility
+    """
+    productsByAttribute(
+        input: ProductsByAttributeInput!
+    ): ProductPaginator
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
+}
+
 """
 Pagination information
 """
@@ -68,11 +159,89 @@ type PaginatorInfo {
 }
 
 """
+Base product fields
+"""
+interface ProductInterface {
+    id: ID!
+    name: String
+    sku: String
+    price: Float
+    created_at: String
+    updated_at: String
+}
+
+"""
+Product type definition
+"""
+type Product implements ProductInterface {
+    id: ID!
+    name: String
+    sku: String
+    price: Float
+    created_at: String
+    updated_at: String
+    description: String
+    short_description: String
+    url_key: String
+    new: Boolean
+    featured: Boolean
+    visible_individually: Boolean
+    status: Boolean
+    images: [ProductImage!]
+    categories: [Category!]
+    attribute_values: [AttributeValue!]
+}
+
+"""
+Product image type
+"""
+type ProductImage {
+    id: ID!
+    path: String
+    url: String
+}
+
+"""
+Category type
+"""
+type Category {
+    id: ID!
+    name: String
+    slug: String
+}
+
+"""
+Attribute value type
+"""
+type AttributeValue {
+    id: ID!
+    attribute_id: ID!
+    product_id: ID!
+    text_value: String
+    integer_value: Int
+    float_value: Float
+    boolean_value: Boolean
+    datetime_value: String
+    date_value: String
+    json_value: String
+}
+
+"""
 Product paginator type
 """
 type ProductPaginator {
     paginatorInfo: PaginatorInfo!
     data: [Product!]!
+}
+
+"""
+Available sort fields result
+"""
+type AvailableSortFieldsResult {
+    direct_columns: [String!]!
+    eav_attributes: [String!]!
+    all_available_fields: [String!]!
+    note: String
 }
 
 """
@@ -87,15 +256,6 @@ type AttributeValueCount {
 }
 
 """
-Attribute count result type
-"""
-type AttributeCountResult {
-    attribute: String!
-    value: String!
-    total_products: Int!
-}
-
-"""
 Attribute values with counts result type
 """
 type AttributeValuesWithCounts {
@@ -106,127 +266,7 @@ type AttributeValuesWithCounts {
 
 extend type Query {
     """
-    Get products filtered by attribute value
-    """
-    productsByAttribute(
-        input: ProductsByAttributeInput!
-    ): ProductPaginator
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
-
-    """
-    DEBUG: Check attribute and value matching
-    """
-    debugAttribute(
-        attribute: String = "brand"
-        value: String = "Dior"
-    ): JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debug")
-
-    """
-    Get total product count for a specific attribute value
-    """
-    attributeProductCount(
-        attribute: String!
-        value: String!
-    ): AttributeCountResult
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeProductCount")
-
-    """
-    Get all values for an attribute with product counts
-    """
-    attributeValuesWithCounts(
-    attribute: String!
-    locale: String
-): AttributeValuesWithCounts
-    @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
-    """
-    DEBUG: Check product relationships
-    """
-    debugRelationships: JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugRelationships")
-
-    """
-    DEBUG: Direct SQL query
-    """
-    debugQuery(
-        attribute: String = "brand"
-        value: String = "Dior"
-    ): JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
-}
-
-
-"""
-Input for products by attribute query with EAV sorting
-"""
-input ProductsByAttributeEavInput {
-    """
-    Attribute code to filter by (e.g., 'brand', 'color', 'size')
-    """
-    attribute: String!
-
-    """
-    Value to filter by
-    """
-    value: String!
-
-    """
-    Category IDs or slugs
-    """
-    categories: [String!]
-
-    """
-    Minimum price
-    """
-    min_price: Float
-
-    """
-    Maximum price
-    """
-    max_price: Float
-
-    """
-    In stock only
-    """
-    in_stock: Boolean
-
-    """
-    Sort by field
-    Can be:
-    - Direct columns: id, created_at, updated_at
-    - EAV attributes: name, sku, price, quantity, weight, status, views, short_description, description, url_key, new, featured, visible_individually
-    """
-    sortBy: String = "created_at"
-
-    """
-    Sort order: 'asc' for ascending, 'desc' for descending
-    """
-    sortOrder: String = "desc"
-
-    """
-    Items per page
-    """
-    perPage: Int = 10
-
-    """
-    Page number
-    """
-    page: Int = 1
-}
-
-"""
-Available sort fields result
-"""
-type AvailableSortFieldsResult {
-    direct_columns: [String!]!
-    eav_attributes: [String!]!
-    all_available_fields: [String!]!
-    note: String
-}
-
-extend type Query {
-    """
-    NEW API: Get products filtered by attribute value with EAV-compatible sorting
+    NEW API: Get products filtered by multiple attribute values with EAV-compatible sorting
     This query properly handles sorting by EAV attributes like name, price, etc.
     """
     productsByAttributeEav(
@@ -235,9 +275,18 @@ extend type Query {
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery")
 
     """
-    NEW API: Get available sort fields for productsByAttributeEav
+    Get available sort fields for productsByAttributeEav
     Use this to see what fields you can sort by
     """
     getAvailableSortFields: AvailableSortFieldsResult!
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery@getAvailableSortFields")
+
+    """
+    Get all values for an attribute with product counts
+    """
+    attributeValuesWithCounts(
+        attribute: String!
+        locale: String
+    ): AttributeValuesWithCounts
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery@attributeValuesWithCounts")
 }

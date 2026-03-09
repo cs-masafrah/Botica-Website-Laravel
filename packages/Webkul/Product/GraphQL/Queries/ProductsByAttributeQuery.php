@@ -6,6 +6,7 @@ use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ProductsByAttributeQuery
 {
@@ -31,7 +32,7 @@ class ProductsByAttributeQuery
         $perPage = $input['perPage'] ?? 10;
         $page = $input['page'] ?? 1;
 
-        // Build the query WITHOUT price filter for now
+        // Build the query
         $query = $this->buildQuery($attributeCode, $value, $input);
 
         // Get total count
@@ -86,28 +87,43 @@ class ProductsByAttributeQuery
             $q->where('attribute_id', $attribute->id);
 
             if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
-                $optionId = \DB::table('attribute_options')
-                    ->where('attribute_id', $attribute->id)
-                    ->where('admin_name', $value)
-                    ->value('id');
+                // Check if value contains commas (multiple values)
+                if (strpos($value, ',') !== false) {
+                    $values = array_map('trim', explode(',', $value));
+                    $optionIds = DB::table('attribute_options')
+                        ->where('attribute_id', $attribute->id)
+                        ->whereIn('admin_name', $values)
+                        ->pluck('id');
 
-                if ($optionId) {
-                    $q->where('integer_value', $optionId);
+                    if ($optionIds->isNotEmpty()) {
+                        $q->whereIn('integer_value', $optionIds);
+                    } else {
+                        $q->where('id', 0); // No matches
+                    }
                 } else {
-                    $q->where('id', 0);
+                    $optionId = DB::table('attribute_options')
+                        ->where('attribute_id', $attribute->id)
+                        ->where('admin_name', $value)
+                        ->value('id');
+
+                    if ($optionId) {
+                        $q->where('integer_value', $optionId);
+                    } else {
+                        $q->where('id', 0); // No matches
+                    }
                 }
             } else {
                 $q->where('text_value', $value);
             }
         });
 
-        // Apply other filters (excluding price filter for now)
+        // Apply other filters
         $query = $this->applyOtherFilters($query, $input);
 
         // Apply sorting
         $sortBy = $input['sortBy'] ?? 'created_at';
-        $sortOrder = $input['sortOrder'] ?? 'desc';
-        $query->orderBy($sortBy, $sortOrder);
+        $sortOrder = $this->validateSortOrder($input['sortOrder'] ?? 'desc');
+        $query = $this->applySorting($query, $sortBy, $sortOrder);
 
         return $query;
     }
@@ -117,28 +133,98 @@ class ProductsByAttributeQuery
      */
     protected function applyOtherFilters($query, $input)
     {
-        // Filter by categories
+        // Filter by categories - FIXED: Remove slug condition
         if (isset($input['categories']) && !empty($input['categories'])) {
             $query->whereHas('categories', function ($q) use ($input) {
                 if (is_array($input['categories'])) {
-                    $q->whereIn('id', $input['categories'])
-                        ->orWhereIn('slug', $input['categories']);
+                    // Only filter by ID, not by slug
+                    $q->whereIn('id', $input['categories']);
                 }
             });
         }
 
-        // Filter by stock - simplified
+        // Filter by stock
         if (isset($input['in_stock']) && $input['in_stock']) {
-            // Try to filter by inventory if the relationship exists
             if (method_exists($query->getModel(), 'inventories')) {
                 $query->whereHas('inventories', function ($q) {
                     $q->where('qty', '>', 0);
                 });
             }
-            // If no inventory relationship, don't apply filter
+        }
+
+        // Filter by price range
+        if (isset($input['min_price']) || isset($input['max_price'])) {
+            $priceAttribute = $this->attributeRepository->findOneByField('code', 'price');
+            if ($priceAttribute) {
+                $query->whereHas('attribute_values', function ($q) use ($priceAttribute, $input) {
+                    $q->where('attribute_id', $priceAttribute->id);
+
+                    if (isset($input['min_price'])) {
+                        $q->where('float_value', '>=', (float) $input['min_price']);
+                    }
+
+                    if (isset($input['max_price'])) {
+                        $q->where('float_value', '<=', (float) $input['max_price']);
+                    }
+                });
+            }
         }
 
         return $query;
+    }
+
+    /**
+     * Apply sorting
+     */
+    protected function applySorting($query, $sortBy, $sortOrder)
+    {
+        $directColumns = ['id', 'created_at', 'updated_at'];
+
+        if (in_array($sortBy, $directColumns)) {
+            return $query->orderBy('products.' . $sortBy, $sortOrder);
+        }
+
+        $attribute = $this->attributeRepository->findOneByField('code', $sortBy);
+
+        if ($attribute) {
+            $query->leftJoin('product_attribute_values as sort_values', function ($join) use ($attribute) {
+                $join->on('products.id', '=', 'sort_values.product_id')
+                    ->where('sort_values.attribute_id', '=', $attribute->id);
+            });
+
+            switch ($attribute->type) {
+                case 'select':
+                case 'multiselect':
+                case 'boolean':
+                    $query->orderBy('sort_values.integer_value', $sortOrder);
+                    break;
+                case 'date':
+                case 'datetime':
+                    $query->orderBy('sort_values.datetime_value', $sortOrder);
+                    break;
+                case 'price':
+                case 'float':
+                    $query->orderBy('sort_values.float_value', $sortOrder);
+                    break;
+                default:
+                    $query->orderBy('sort_values.text_value', $sortOrder);
+            }
+
+            $query->select('products.*')->distinct();
+        } else {
+            $query->orderBy('products.created_at', $sortOrder);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Validate sort order
+     */
+    protected function validateSortOrder($sortOrder)
+    {
+        $sortOrder = strtolower($sortOrder);
+        return in_array($sortOrder, ['asc', 'desc']) ? $sortOrder : 'desc';
     }
 
     /**
@@ -164,7 +250,7 @@ class ProductsByAttributeQuery
                 $q->where('attribute_id', $attribute->id);
 
                 if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
-                    $optionId = \DB::table('attribute_options')
+                    $optionId = DB::table('attribute_options')
                         ->where('attribute_id', $attribute->id)
                         ->where('admin_name', $value)
                         ->value('id');
@@ -190,92 +276,6 @@ class ProductsByAttributeQuery
     /**
      * Get all attribute values with product counts
      */
-    // public function attributeValuesWithCounts($rootValue, array $args, GraphQLContext $context)
-    // {
-    //     $attributeCode = $args['attribute'];
-
-    //     $attribute = $this->attributeRepository->findOneByField('code', $attributeCode);
-
-    //     if (!$attribute) {
-    //         $attribute = $this->attributeRepository->findOneByField('admin_name', $attributeCode);
-    //     }
-
-    //     if (!$attribute) {
-    //         throw new \Exception("Attribute '{$attributeCode}' not found");
-    //     }
-
-    //     $results = [];
-
-    //     if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
-    //         // For select attributes, get all options with counts
-    //         $options = \DB::table('attribute_options')
-    //             ->where('attribute_id', $attribute->id)
-    //             ->get(['id', 'admin_name', 'image']); // Added 'image' field
-
-    //         foreach ($options as $option) {
-    //             $count = $this->productRepository
-    //                 ->whereHas('attribute_values', function ($q) use ($attribute, $option) {
-    //                     $q->where('attribute_id', $attribute->id)
-    //                         ->where('integer_value', $option->id);
-    //                 })
-    //                 ->count();
-
-    //             if ($count > 0) {
-    //                 // Get image URL if exists
-    //                 $imageUrl = null;
-    //                 if ($option->image) {
-    //                     $imageUrl = Storage::url($option->image);
-    //                 }
-
-    //                 $results[] = [
-    //                     'value' => $option->admin_name,
-    //                     'label' => $option->admin_name,
-    //                     'product_count' => $count,
-    //                     'option_id' => $option->id,
-    //                     'image_url' => $imageUrl, // Added image_url field
-    //                 ];
-    //             }
-    //         }
-    //     } else {
-    //         // For text attributes, get distinct values with counts
-    //         $values = \DB::table('product_attribute_values')
-    //             ->where('attribute_id', $attribute->id)
-    //             ->whereNotNull('text_value')
-    //             ->select('text_value')
-    //             ->distinct()
-    //             ->get();
-
-    //         foreach ($values as $value) {
-    //             $count = $this->productRepository
-    //                 ->whereHas('attribute_values', function ($q) use ($attribute, $value) {
-    //                     $q->where('attribute_id', $attribute->id)
-    //                         ->where('text_value', $value->text_value);
-    //                 })
-    //                 ->count();
-
-    //             if ($count > 0) {
-    //                 $results[] = [
-    //                     'value' => $value->text_value,
-    //                     'label' => $value->text_value,
-    //                     'product_count' => $count,
-    //                     'image_url' => null, // Text attributes don't have images
-    //                 ];
-    //             }
-    //         }
-    //     }
-
-    //     // Sort by product count descending
-    //     usort($results, function ($a, $b) {
-    //         return $b['product_count'] <=> $a['product_count'];
-    //     });
-
-    //     return [
-    //         'attribute' => $attributeCode,
-    //         'values' => $results,
-    //         'total_values' => count($results)
-    //     ];
-    // }
-
     public function attributeValuesWithCounts($rootValue, array $args, GraphQLContext $context)
     {
         $attributeCode = $args['attribute'];
@@ -297,13 +297,13 @@ class ProductsByAttributeQuery
 
         if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
             // For select attributes, get all options with counts and translations
-            $options = \DB::table('attribute_options')
+            $options = DB::table('attribute_options')
                 ->where('attribute_id', $attribute->id)
                 ->get(['id', 'admin_name', 'image']);
 
             // Get translations for all options in the specified locale
             $optionIds = $options->pluck('id')->toArray();
-            $translations = \DB::table('attribute_option_translations')
+            $translations = DB::table('attribute_option_translations')
                 ->whereIn('attribute_option_id', $optionIds)
                 ->where('locale', $locale)
                 ->get()
@@ -331,17 +331,17 @@ class ProductsByAttributeQuery
 
                     $results[] = [
                         'value' => $option->admin_name,
-                        'label' => $translatedLabel, // Use translated label
+                        'label' => $translatedLabel,
                         'product_count' => $count,
                         'option_id' => $option->id,
                         'image_url' => $imageUrl,
-                        'locale' => $locale, // Added locale for reference
+                        'locale' => $locale,
                     ];
                 }
             }
         } else {
             // For text attributes, get distinct values with counts
-            $values = \DB::table('product_attribute_values')
+            $values = DB::table('product_attribute_values')
                 ->where('attribute_id', $attribute->id)
                 ->whereNotNull('text_value')
                 ->select('text_value')
@@ -359,7 +359,7 @@ class ProductsByAttributeQuery
                 if ($count > 0) {
                     $results[] = [
                         'value' => $value->text_value,
-                        'label' => $value->text_value, // Text attributes don't have translations
+                        'label' => $value->text_value,
                         'product_count' => $count,
                         'image_url' => null,
                         'locale' => $locale,
@@ -379,6 +379,7 @@ class ProductsByAttributeQuery
             'total_values' => count($results)
         ];
     }
+
     /**
      * Debug method to check product relationships
      */
@@ -412,13 +413,13 @@ class ProductsByAttributeQuery
         });
 
         // Check table structure
-        $columns = \DB::getSchemaBuilder()->getColumnListing('products');
+        $columns = DB::getSchemaBuilder()->getColumnListing('products');
 
         return [
             'available_relationships' => $relationships,
             'price_related_methods' => array_values($priceMethods),
             'product_table_columns' => $columns,
-            'note' => 'Price filter is temporarily disabled'
+            'note' => 'Price filter is now enabled'
         ];
     }
 
@@ -437,19 +438,19 @@ class ProductsByAttributeQuery
         }
 
         // Get option ID
-        $optionId = \DB::table('attribute_options')
+        $optionId = DB::table('attribute_options')
             ->where('attribute_id', $attribute->id)
             ->where('admin_name', $value)
             ->value('id');
 
         // Get product IDs directly
-        $productIds = \DB::table('product_attribute_values')
+        $productIds = DB::table('product_attribute_values')
             ->where('attribute_id', $attribute->id)
             ->where('integer_value', $optionId)
             ->pluck('product_id');
 
         // Get products
-        $products = \DB::table('products')
+        $products = DB::table('products')
             ->whereIn('id', $productIds)
             ->get(['id', 'name', 'sku', 'type']);
 
@@ -463,7 +464,7 @@ class ProductsByAttributeQuery
     }
 
     /**
-     * DEBUG: Check attribute and value matching (to match GraphQL schema)
+     * DEBUG: Check attribute and value matching
      */
     public function debug($rootValue, array $args, GraphQLContext $context)
     {
@@ -477,13 +478,13 @@ class ProductsByAttributeQuery
         }
 
         // Get option ID
-        $optionId = \DB::table('attribute_options')
+        $optionId = DB::table('attribute_options')
             ->where('attribute_id', $attribute->id)
             ->where('admin_name', $value)
             ->value('id');
 
         // Get product IDs directly
-        $productIds = \DB::table('product_attribute_values')
+        $productIds = DB::table('product_attribute_values')
             ->where('attribute_id', $attribute->id)
             ->where('integer_value', $optionId)
             ->pluck('product_id');
