@@ -1,55 +1,16 @@
 """
-Input for products by attribute query
+Input for legacy products by attribute query
 """
 input ProductsByAttributeInput {
-    """
-    Attribute code to filter by (e.g., 'brand', 'color', 'size')
-    """
     attribute: String!
-
-    """
-    Value to filter by
-    """
     value: String!
-
-    """
-    Category IDs or slugs
-    """
     categories: [String!]
-
-    """
-    Minimum price
-    """
     min_price: Float
-
-    """
-    Maximum price
-    """
     max_price: Float
-
-    """
-    In stock only
-    """
     in_stock: Boolean
-
-    """
-    Sort by field
-    """
     sortBy: String
-
-    """
-    Sort order (asc/desc)
-    """
     sortOrder: String
-
-    """
-    Items per page
-    """
     perPage: Int = 10
-
-    """
-    Page number
-    """
     page: Int = 1
 }
 
@@ -76,7 +37,7 @@ type ProductPaginator {
 }
 
 """
-Attribute value count type
+Attribute value count type (used in attributeValuesWithCounts)
 """
 type AttributeValueCount {
     value: String!
@@ -87,7 +48,7 @@ type AttributeValueCount {
 }
 
 """
-Attribute count result type
+Result for attribute product count
 """
 type AttributeCountResult {
     attribute: String!
@@ -96,7 +57,7 @@ type AttributeCountResult {
 }
 
 """
-Attribute values with counts result type
+Attribute values with counts result
 """
 type AttributeValuesWithCounts {
     attribute: String!
@@ -104,118 +65,46 @@ type AttributeValuesWithCounts {
     total_values: Int!
 }
 
-extend type Query {
-    """
-    Get products filtered by attribute value
-    """
-    productsByAttribute(
-        input: ProductsByAttributeInput!
-    ): ProductPaginator
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
-
-    """
-    DEBUG: Check attribute and value matching
-    """
-    debugAttribute(
-        attribute: String = "brand"
-        value: String = "Dior"
-    ): JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debug")
-
-    """
-    Get total product count for a specific attribute value
-    """
-    attributeProductCount(
-        attribute: String!
-        value: String!
-    ): AttributeCountResult
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeProductCount")
-
-    """
-    Get all values for an attribute with product counts
-    """
-    attributeValuesWithCounts(
-    attribute: String!
-    locale: String
-): AttributeValuesWithCounts
-    @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
-    """
-    DEBUG: Check product relationships
-    """
-    debugRelationships: JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugRelationships")
-
-    """
-    DEBUG: Direct SQL query
-    """
-    debugQuery(
-        attribute: String = "brand"
-        value: String = "Dior"
-    ): JSON
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
+"""
+Operators for advanced filtering
+"""
+enum FilterOperator {
+    eq    # Equal
+    in    # In array
+    gte   # Greater than or equal
+    lte   # Less than or equal
+    gt    # Greater than
+    lt    # Less than
+    like  # Like (text search)
 }
 
+"""
+Single filter condition for advanced filtering
+"""
+input ProductFilterInput {
+    attribute: String!
+    value: [String!]!
+    operator: FilterOperator = eq
+}
 
 """
-Input for products by attribute query with EAV sorting
+Input for the new productsByAttributeEav query
 """
 input ProductsByAttributeEavInput {
-    """
-    Attribute code to filter by (e.g., 'brand', 'color', 'size')
-    """
-    attribute: String!
-
-    """
-    Value to filter by
-    """
-    value: String!
-
-    """
-    Category IDs or slugs
-    """
+    filters: [ProductFilterInput!]
+    search: String
     categories: [String!]
-
-    """
-    Minimum price
-    """
     min_price: Float
-
-    """
-    Maximum price
-    """
     max_price: Float
-
-    """
-    In stock only
-    """
     in_stock: Boolean
-
-    """
-    Sort by field
-    Can be:
-    - Direct columns: id, created_at, updated_at
-    - EAV attributes: name, sku, price, quantity, weight, status, views, short_description, description, url_key, new, featured, visible_individually
-    """
     sortBy: String = "created_at"
-
-    """
-    Sort order: 'asc' for ascending, 'desc' for descending
-    """
     sortOrder: String = "desc"
-
-    """
-    Items per page
-    """
     perPage: Int = 10
-
-    """
-    Page number
-    """
     page: Int = 1
 }
 
 """
-Available sort fields result
+Available sort fields result for debugging
 """
 type AvailableSortFieldsResult {
     direct_columns: [String!]!
@@ -225,19 +114,29 @@ type AvailableSortFieldsResult {
 }
 
 extend type Query {
-    """
-    NEW API: Get products filtered by attribute value with EAV-compatible sorting
-    This query properly handles sorting by EAV attributes like name, price, etc.
-    """
-    productsByAttributeEav(
-        input: ProductsByAttributeEavInput!
-    ): ProductPaginator
+    # ---------- LEGACY QUERIES (unchanged) ----------
+    productsByAttribute(input: ProductsByAttributeInput!): ProductPaginator
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
+
+    debugAttribute(attribute: String = "brand", value: String = "Dior"): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debug")
+
+    attributeProductCount(attribute: String!, value: String!): AttributeCountResult
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeProductCount")
+
+    attributeValuesWithCounts(attribute: String!, locale: String): AttributeValuesWithCounts
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
+
+    debugRelationships: JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugRelationships")
+
+    debugQuery(attribute: String = "brand", value: String = "Dior"): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
+
+    # ---------- NEW ADVANCED QUERIES ----------
+    productsByAttributeEav(input: ProductsByAttributeEavInput!): ProductPaginator
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery")
 
-    """
-    NEW API: Get available sort fields for productsByAttributeEav
-    Use this to see what fields you can sort by
-    """
     getAvailableSortFields: AvailableSortFieldsResult!
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery@getAvailableSortFields")
 }
