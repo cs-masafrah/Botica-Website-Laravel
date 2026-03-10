@@ -38,6 +38,7 @@ class Product extends Model implements ProductContract
         'parent_id',
     ];
 
+    protected $appends = ['customizable_options'];
     /**
      * The attributes that should be cast.
      */
@@ -213,6 +214,13 @@ class Product extends Model implements ProductContract
             ->orderBy('sort_order');
     }
 
+    /**
+     * Accessor for customizableOptions field
+     */
+    public function getCustomizableOptionsAttribute()
+    {
+        return $this->customizable_options()->get();
+    }
     /**
      * Get the product variants that owns the product.
      */

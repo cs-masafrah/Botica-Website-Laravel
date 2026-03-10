@@ -133,17 +133,6 @@ input ProductsByAttributeInput {
     page: Int = 1
 }
 
-extend type Query {
-    """
-    Get products filtered by a single attribute value
-    This is a simplified version for backward compatibility
-    """
-    productsByAttribute(
-        input: ProductsByAttributeInput!
-    ): ProductPaginator
-        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
-}
-
 """
 Pagination information
 """
@@ -159,37 +148,82 @@ type PaginatorInfo {
 }
 
 """
-Base product fields
+Product review type
 """
-interface ProductInterface {
+type ProductReview {
     id: ID!
-    name: String
-    sku: String
-    price: Float
+    title: String
+    rating: Int
+    comment: String
     created_at: String
-    updated_at: String
+    createdAt: String
+    product_id: ID
+    customer_id: ID
 }
 
 """
-Product type definition
+Price HTML type
 """
-type Product implements ProductInterface {
-    id: ID!
-    name: String
-    sku: String
+type PriceHtml {
+    id: ID
+    type: String
+    priceHtml: String
+    regularPrice: Float
+    formattedRegularPrice: String
+    finalPrice: Float
+    formattedFinalPrice: String
+}
+
+"""
+Additional data type
+"""
+type AdditionalData {
+    id: ID
+    label: String
+    value: String
+    type: String
+}
+
+"""
+Customizable option price type
+"""
+type CustomizableOptionPrice {
+    id: ID
+    isDefault: Boolean
+    isUserDefined: Boolean
+    label: String
     price: Float
-    created_at: String
-    updated_at: String
-    description: String
-    short_description: String
-    url_key: String
-    new: Boolean
-    featured: Boolean
-    visible_individually: Boolean
-    status: Boolean
+    productCustomizableOptionId: ID
+    qty: Int
+    sortOrder: Int
+}
+
+"""
+Customizable option type
+"""
+type CustomizableOption {
+    id: ID
+    label: String
+    productId: ID
+    type: String
+    isRequired: Boolean
+    maxCharacters: Int
+    supportedFileExtensions: [String]
+    sortOrder: Int
+    customizableOptionPrices: [CustomizableOptionPrice!]
+}
+
+"""
+Variant type
+"""
+type Variant {
+    id: ID!
+    type: String
+    sku: String
+    name: String
+    price: Float
+    parentId: ID
     images: [ProductImage!]
-    categories: [Category!]
-    attribute_values: [AttributeValue!]
 }
 
 """
@@ -197,8 +231,10 @@ Product image type
 """
 type ProductImage {
     id: ID!
+    type: String
     path: String
     url: String
+    productId: ID
 }
 
 """
@@ -224,6 +260,65 @@ type AttributeValue {
     datetime_value: String
     date_value: String
     json_value: String
+}
+
+"""
+Base product fields
+"""
+interface ProductInterface {
+    id: ID!
+    name: String
+    sku: String
+    price: Float
+    created_at: String
+    updated_at: String
+}
+
+"""
+Product type definition with all fields
+"""
+type Product implements ProductInterface {
+    # Base fields
+    id: ID!
+    name: String
+    sku: String
+    price: Float
+    created_at: String
+    updated_at: String
+
+    # Additional fields
+    type: String
+    isInWishlist: Boolean
+    isInSale: Boolean
+    isSaleable: Boolean
+    shareURL: String
+    url_key: String
+    short_description: String
+    description: String
+    parentId: ID
+    new: Boolean
+    featured: Boolean
+    visible_individually: Boolean
+    status: Boolean
+
+    # Relations
+    images: [ProductImage!]
+    categories: [Category!]
+    attribute_values: [AttributeValue!]
+    variants: [Variant!]
+    reviews: [ProductReview!]
+
+    # Computed fields
+    averageRating: Float
+    percentageRating: String
+    priceHtml: PriceHtml
+    additionalData: [AdditionalData!]
+    customizableOptions: [CustomizableOption!]
+
+    urlKey: String @rename(attribute: "url_key")
+    shortDescription: String @rename(attribute: "short_description")
+    createdAt: String @rename(attribute: "created_at")
+    updatedAt: String @rename(attribute: "updated_at")
 }
 
 """
@@ -256,6 +351,15 @@ type AttributeValueCount {
 }
 
 """
+Attribute count result type
+"""
+type AttributeCountResult {
+    attribute: String!
+    value: String!
+    total_products: Int!
+}
+
+"""
 Attribute values with counts result type
 """
 type AttributeValuesWithCounts {
@@ -265,6 +369,15 @@ type AttributeValuesWithCounts {
 }
 
 extend type Query {
+    """
+    Get products filtered by a single attribute value
+    This is a simplified version for backward compatibility
+    """
+    productsByAttribute(
+        input: ProductsByAttributeInput!
+    ): ProductPaginator
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery")
+
     """
     NEW API: Get products filtered by multiple attribute values with EAV-compatible sorting
     This query properly handles sorting by EAV attributes like name, price, etc.
@@ -289,4 +402,51 @@ extend type Query {
         locale: String
     ): AttributeValuesWithCounts
         @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeEavQuery@attributeValuesWithCounts")
+
+    """
+    DEBUG: Check attribute and value matching
+    """
+    debugAttribute(
+        attribute: String = "brand"
+        value: String = "Dior"
+    ): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debug")
+
+    """
+    Get total product count for a specific attribute value
+    """
+    attributeProductCount(
+        attribute: String!
+        value: String!
+    ): AttributeCountResult
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeProductCount")
+
+    """
+    Get all values for an attribute with product counts (legacy)
+    """
+    attributeValuesWithCountsLegacy(
+        attribute: String!
+        locale: String
+    ): AttributeValuesWithCounts
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@attributeValuesWithCounts")
+
+    """
+    DEBUG: Check product relationships
+    """
+    debugRelationships: JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugRelationships")
+
+    """
+    DEBUG: Direct SQL query
+    """
+    debugQuery(
+        attribute: String = "brand"
+        value: String = "Dior"
+    ): JSON
+        @field(resolver: "Webkul\\Product\\GraphQL\\Queries\\ProductsByAttributeQuery@debugQuery")
 }
+
+"""
+The `JSON` scalar type represents JSON values
+"""
+scalar JSON
