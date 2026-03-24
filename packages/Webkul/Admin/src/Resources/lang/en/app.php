@@ -3549,6 +3549,13 @@ return [
                 'url'                           => 'URL',
                 'value'                         => 'Value: :value',
                 'value-input'                   => 'Value',
+                'sku'                           => 'sku',
+                'category'                      => 'category',
+                'brand'                         => 'brand',
+                'sku-placeholder'   => 'Enter SKU',
+                'select-category'   => 'Select Category',
+                'select-brand'      => 'Select Brand',
+
 
                 'services-content' => [
                     'add-btn'            => 'Add Services',

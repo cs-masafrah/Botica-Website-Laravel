@@ -90,6 +90,7 @@ class ThemeController extends Controller
      */
     public function update(int $id)
     {
+
         $this->validate(request(), [
             'name'       => 'required',
             'sort_order' => 'required|numeric',
@@ -111,6 +112,7 @@ class ThemeController extends Controller
             $locale
         );
 
+       
         Event::dispatch('theme_customization.update.before', $id);
 
         $data['status'] = request()->input('status') == 'on';

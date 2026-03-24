@@ -38,6 +38,7 @@ class ThemeCustomizationRepository extends Repository
             unset($data[$locale]['options']);
         }
 
+
         $theme = parent::update($data, $id);
 
         if (in_array($data['type'], ['image_carousel', 'services_content'])) {
@@ -93,7 +94,7 @@ class ThemeCustomizationRepository extends Repository
                 try {
                     $manager = new ImageManager;
 
-                    $path = 'theme/'.$theme->id.'/'.Str::random(40).'.webp';
+                    $path = 'theme/' . $theme->id . '/' . Str::random(40) . '.webp';
 
                     Storage::put($path, $manager->make($image['image'])->encode('webp'));
                 } catch (\Exception $e) {
@@ -107,9 +108,12 @@ class ThemeCustomizationRepository extends Repository
                 }
 
                 $options['images'][] = [
-                    'image' => 'storage/'.$path,
+                    'image' => 'storage/' . $path,
                     'link'  => $image['link'],
                     'title' => $image['title'],
+                    'sku' => $image['sku'],
+                    'category' => $image['category'],
+                    'brand' => $image['brand'],
                 ];
             } else {
                 $options['images'][] = $image;
