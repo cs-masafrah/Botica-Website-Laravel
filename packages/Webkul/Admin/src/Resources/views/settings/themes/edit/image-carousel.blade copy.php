@@ -1,4 +1,4 @@
-<v-image-carousel :errors="errors" categories-url="{{ route('shop.api.categories.index') }}" brands-url="{{ route('shop.api.brands.index') }}" products-url="{{ route('shop.api.products.index') }}">
+<v-image-carousel :errors="errors">
     <x-admin::shimmer.settings.themes.image-carousel />
 </v-image-carousel>
 
@@ -208,69 +208,38 @@
                             />
                         </x-admin::form.control-group>
 
-                        <!-- SKU: searchable dropdown (styled) -->
+                        <!-- New nullable fields -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label>
                                 @lang('admin::app.settings.themes.edit.sku')
                             </x-admin::form.control-group.label>
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    v-model="skuSearchTerm"
-                                    @input="searchProducts"
-                                    @focus="searchProducts"
-                                    placeholder="{{ trans('admin::app.settings.themes.edit.sku-placeholder') }}"
-                                    class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                                />
-                                <ul v-if="productsList.length && skuSearchTerm" class="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded-md max-h-48 dark:bg-gray-800 dark:border-gray-700">
-                                    <li
-                                        v-for="product in productsList"
-                                        :key="product.sku"
-                                        @click="selectProduct(product)"
-                                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    >
-                                        <span class="font-medium">@{{ product.sku }}</span> – @{{ product.name }}
-                                    </li>
-                                </ul>
-                            </div>
-                            <input type="hidden" name="{{ $currentLocale->code }}[sku]" :value="selectedSku" />
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[sku]" />
+                            <x-admin::form.control-group.control
+                                type="text"
+                                name="{{ $currentLocale->code }}[sku]"
+                                :placeholder="trans('admin::app.settings.themes.edit.sku')"
+                            />
                         </x-admin::form.control-group>
 
-                        <!-- Category dropdown (styled) -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label>
                                 @lang('admin::app.settings.themes.edit.category')
                             </x-admin::form.control-group.label>
-                            <select
+                            <x-admin::form.control-group.control
+                                type="text"
                                 name="{{ $currentLocale->code }}[category]"
-                                v-model="selectedCategory"
-                                class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                            >
-                                <option value="">-- @lang('admin::app.settings.themes.edit.select-category') --</option>
-                                <option v-for="cat in categoriesList" :value="cat.id" :key="cat.id">
-                                    @{{ cat.name }}
-                                </option>
-                            </select>
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[category]" />
+                                :placeholder="trans('admin::app.settings.themes.edit.category')"
+                            />
                         </x-admin::form.control-group>
 
-                        <!-- Brand dropdown (styled) -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label>
                                 @lang('admin::app.settings.themes.edit.brand')
                             </x-admin::form.control-group.label>
-                            <select
+                            <x-admin::form.control-group.control
+                                type="text"
                                 name="{{ $currentLocale->code }}[brand]"
-                                v-model="selectedBrand"
-                                class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                            >
-                                <option value="">-- @lang('admin::app.settings.themes.edit.select-brand') --</option>
-                                <option v-for="brand in brandsList" :value="brand.name" :key="brand.name">
-                                    @{{ brand.name }}
-                                </option>
-                            </select>
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[brand]" />
+                                :placeholder="trans('admin::app.settings.themes.edit.brand')"
+                            />
                         </x-admin::form.control-group>
 
                         <x-admin::form.control-group>
@@ -308,44 +277,20 @@
     app.component('v-image-carousel', {
         template: '#v-image-carousel-template',
 
-        props: {
-            errors: {
-                type: Object,
-                default: () => ({}),
-            },
-            categoriesUrl: {
-                type: String,
-                required: true,
-            },
-            brandsUrl: {
-                type: String,
-                required: true,
-            },
-            productsUrl: {
-                type: String,
-                required: true,
-            },
-        },
+        props: ['errors'],
 
         data() {
             return {
                 sliders: @json($theme->translate($currentLocale->code)['options'] ?? null),
                 deletedSliders: [],
-
-                // Dropdown data
-                categoriesList: [],
-                brandsList: [],
-                productsList: [],
-                skuSearchTerm: '',
-                selectedSku: '',
-                selectedCategory: '',
-                selectedBrand: '',
             };
         },
 
         computed: {
+            // Normalize images to always have the nullable fields
             normalizedImages() {
                 if (!this.sliders.images) return [];
+
                 return this.sliders.images.map(image => ({
                     sku: image.sku ?? '',
                     category: image.category ?? '',
@@ -364,62 +309,9 @@
             } else if (!this.sliders.images) {
                 this.sliders.images = [];
             }
-
-            // Fetch categories and brands once
-            this.fetchCategories();
-            this.fetchBrands();
         },
 
         methods: {
-            async fetchCategories() {
-                try {
-                    const response = await axios.get(this.categoriesUrl);
-                    this.categoriesList = response.data.data || response.data;
-                } catch (error) {
-                    console.error('Error fetching categories:', error);
-                }
-            },
-
-            async fetchBrands() {
-                try {
-                    const response = await axios.get(this.brandsUrl, {
-                        params: { show_all: 1 }
-                    });
-                    this.brandsList = response.data.data || response.data;
-                } catch (error) {
-                    console.error('Error fetching brands:', error);
-                }
-            },
-
-            async searchProducts() {
-                if (!this.skuSearchTerm.trim()) {
-                    this.productsList = [];
-                    return;
-                }
-                try {
-                    const response = await axios.get(this.productsUrl, {
-                        params: { search: this.skuSearchTerm, limit: 10 }
-                    });
-                    this.productsList = response.data.data || response.data;
-                } catch (error) {
-                    console.error('Error searching products:', error);
-                }
-            },
-
-            selectProduct(product) {
-                this.selectedSku = product.sku;
-                this.skuSearchTerm = `${product.sku} – ${product.name}`;
-                this.productsList = [];
-            },
-
-            resetModalForm() {
-                this.selectedSku = '';
-                this.selectedCategory = '';
-                this.selectedBrand = '';
-                this.skuSearchTerm = '';
-                this.productsList = [];
-            },
-
             saveSliderImage(params, { resetForm, setErrors }) {
                 let formData = new FormData(this.$refs.createSliderForm);
 
@@ -431,11 +323,11 @@
 
                     const title = formData.get("{{ $currentLocale->code }}[title]");
                     const link = formData.get("{{ $currentLocale->code }}[link]");
-                    // Use selected values from dropdowns
-                    const sku = this.selectedSku;
-                    const category = this.selectedCategory;
-                    const brand = this.selectedBrand;
+                    const sku = formData.get("{{ $currentLocale->code }}[sku]");
+                    const category = formData.get("{{ $currentLocale->code }}[category]");
+                    const brand = formData.get("{{ $currentLocale->code }}[brand]");
 
+                    // Push new slider – the computed property will automatically add missing fields
                     this.sliders.images.push({
                         title,
                         link,
@@ -450,7 +342,6 @@
                     }
 
                     resetForm();
-                    this.resetModalForm();
                     this.$refs.addSliderModal.toggle();
                 } catch (error) {
                     setErrors({ 'slider_image': [error.message] });
@@ -473,6 +364,7 @@
             remove(image) {
                 this.$emitter.emit('open-confirm-modal', {
                     agree: () => {
+                        // Find the original image object (by title+link+image)
                         const originalImage = this.sliders.images.find(item =>
                             item.title === image.title &&
                             item.link === image.link &&

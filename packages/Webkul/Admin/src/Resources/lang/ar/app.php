@@ -3545,6 +3545,12 @@ return [
                 'url'                           => 'رابط الإنترنت',
                 'value'                         => 'القيمة: :value',
                 'value-input'                   => 'القيمة',
+                'sku'      => 'رمز المنتج',
+                'category' => 'التصنيف',
+                'brand'    => 'العلامة التجارية',
+                'sku-placeholder'   => 'أدخل رمز المنتج',
+                'select-category'   => 'اختر التصنيف',
+                'select-brand'      => 'اختر العلامة التجارية',
 
                 'services-content' => [
                     'add-btn'            => 'أضف الخدمات',
