@@ -208,70 +208,94 @@
                             />
                         </x-admin::form.control-group>
 
-                        <!-- SKU: searchable dropdown (styled) -->
+                        <!-- Type Selector (optional) -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label>
-                                @lang('admin::app.settings.themes.edit.sku')
+                                @lang('admin::app.settings.themes.edit.type')
                             </x-admin::form.control-group.label>
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    v-model="skuSearchTerm"
-                                    @input="searchProducts"
-                                    @focus="searchProducts"
-                                    placeholder="{{ trans('admin::app.settings.themes.edit.sku-placeholder') }}"
-                                    class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                                />
-                                <ul v-if="productsList.length && skuSearchTerm" class="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded-md max-h-48 dark:bg-gray-800 dark:border-gray-700">
-                                    <li
-                                        v-for="product in productsList"
-                                        :key="product.sku"
-                                        @click="selectProduct(product)"
-                                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    >
-                                        <span class="font-medium">@{{ product.sku }}</span> – @{{ product.name }}
-                                    </li>
-                                </ul>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-1">
+                                    <input type="radio" value="sku" v-model="selectedType" /> SKU
+                                </label>
+                                <label class="flex items-center gap-1">
+                                    <input type="radio" value="category" v-model="selectedType" /> Category
+                                </label>
+                                <label class="flex items-center gap-1">
+                                    <input type="radio" value="brand" v-model="selectedType" /> Brand
+                                </label>
                             </div>
-                            <input type="hidden" name="{{ $currentLocale->code }}[sku]" :value="selectedSku" />
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[sku]" />
                         </x-admin::form.control-group>
 
-                        <!-- Category dropdown (styled) -->
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('admin::app.settings.themes.edit.category')
-                            </x-admin::form.control-group.label>
-                            <select
-                                name="{{ $currentLocale->code }}[category]"
-                                v-model="selectedCategory"
-                                class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                            >
-                                <option value="">-- @lang('admin::app.settings.themes.edit.select-category') --</option>
-                                <option v-for="cat in categoriesList" :value="cat.id" :key="cat.id">
-                                    @{{ cat.name }}
-                                </option>
-                            </select>
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[category]" />
-                        </x-admin::form.control-group>
+                        <!-- SKU field (shown only when type = 'sku') -->
+                        <div v-if="selectedType === 'sku'">
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('admin::app.settings.themes.edit.sku')
+                                </x-admin::form.control-group.label>
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        v-model="skuSearchTerm"
+                                        @input="searchProducts"
+                                        @focus="searchProducts"
+                                        placeholder="{{ trans('admin::app.settings.themes.edit.sku-placeholder') }}"
+                                        class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
+                                    />
+                                    <ul v-if="productsList.length && skuSearchTerm" class="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded-md max-h-48 dark:bg-gray-800 dark:border-gray-700">
+                                        <li
+                                            v-for="product in productsList"
+                                            :key="product.sku"
+                                            @click="selectProduct(product)"
+                                            class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            <span class="font-medium">@{{ product.sku }}</span> – @{{ product.name }}
+                                        </li>
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="{{ $currentLocale->code }}[sku]" :value="selectedSku" />
+                                <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[sku]" />
+                            </x-admin::form.control-group>
+                        </div>
 
-                        <!-- Brand dropdown (styled) -->
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('admin::app.settings.themes.edit.brand')
-                            </x-admin::form.control-group.label>
-                            <select
-                                name="{{ $currentLocale->code }}[brand]"
-                                v-model="selectedBrand"
-                                class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
-                            >
-                                <option value="">-- @lang('admin::app.settings.themes.edit.select-brand') --</option>
-                                <option v-for="brand in brandsList" :value="brand.name" :key="brand.name">
-                                    @{{ brand.name }}
-                                </option>
-                            </select>
-                            <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[brand]" />
-                        </x-admin::form.control-group>
+                        <!-- Category field (shown only when type = 'category') -->
+                        <div v-if="selectedType === 'category'">
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('admin::app.settings.themes.edit.category')
+                                </x-admin::form.control-group.label>
+                                <select
+                                    name="{{ $currentLocale->code }}[category]"
+                                    v-model="selectedCategory"
+                                    class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
+                                >
+                                    <option value="">-- @lang('admin::app.settings.themes.edit.select-category') --</option>
+                                    <option v-for="cat in categoriesList" :value="cat.id" :key="cat.id">
+                                        @{{ cat.name }}
+                                    </option>
+                                </select>
+                                <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[category]" />
+                            </x-admin::form.control-group>
+                        </div>
+
+                        <!-- Brand field (shown only when type = 'brand') -->
+                        <div v-if="selectedType === 'brand'">
+                            <x-admin::form.control-group>
+                                <x-admin::form.control-group.label>
+                                    @lang('admin::app.settings.themes.edit.brand')
+                                </x-admin::form.control-group.label>
+                                <select
+                                    name="{{ $currentLocale->code }}[brand]"
+                                    v-model="selectedBrand"
+                                    class="custom-select inline-flex h-10 w-full items-center justify-between gap-x-1 rounded-md border bg-white px-3 py-2.5 text-sm font-normal text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400"
+                                >
+                                    <option value="">-- @lang('admin::app.settings.themes.edit.select-brand') --</option>
+                                    <option v-for="brand in brandsList" :value="brand.name" :key="brand.name">
+                                        @{{ brand.name }}
+                                    </option>
+                                </select>
+                                <x-admin::form.control-group.error control-name="{{ $currentLocale->code }}[brand]" />
+                            </x-admin::form.control-group>
+                        </div>
 
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
@@ -340,6 +364,9 @@
                 selectedSku: '',
                 selectedCategory: '',
                 selectedBrand: '',
+
+                // Type selection (sku, category, brand)
+                selectedType: 'sku',
             };
         },
 
@@ -352,6 +379,17 @@
                     brand: image.brand ?? '',
                     ...image,
                 }));
+            }
+        },
+
+        watch: {
+            // When type changes, clear fields that are no longer relevant
+            selectedType(newType) {
+                if (newType !== 'sku') this.selectedSku = '';
+                if (newType !== 'category') this.selectedCategory = '';
+                if (newType !== 'brand') this.selectedBrand = '';
+                // Also clear search term if switching away from SKU
+                if (newType !== 'sku') this.skuSearchTerm = '';
             }
         },
 
@@ -418,6 +456,7 @@
                 this.selectedBrand = '';
                 this.skuSearchTerm = '';
                 this.productsList = [];
+                this.selectedType = 'sku'; // Reset to default
             },
 
             saveSliderImage(params, { resetForm, setErrors }) {
@@ -431,10 +470,16 @@
 
                     const title = formData.get("{{ $currentLocale->code }}[title]");
                     const link = formData.get("{{ $currentLocale->code }}[link]");
-                    // Use selected values from dropdowns
-                    const sku = this.selectedSku;
-                    const category = this.selectedCategory;
-                    const brand = this.selectedBrand;
+
+                    // Only set the field that corresponds to the selected type
+                    let sku = '', category = '', brand = '';
+                    if (this.selectedType === 'sku') {
+                        sku = this.selectedSku;
+                    } else if (this.selectedType === 'category') {
+                        category = this.selectedCategory;
+                    } else if (this.selectedType === 'brand') {
+                        brand = this.selectedBrand;
+                    }
 
                     this.sliders.images.push({
                         title,

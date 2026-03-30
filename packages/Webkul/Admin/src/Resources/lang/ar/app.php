@@ -3469,7 +3469,7 @@ return [
                 'type' => [
                     'category-carousel' => 'شريط الفئات',
                     'product-by-brand' => 'المنتجات حسب العلامة التجارية',
-                    'product-list' =>'قائمة منتجات',
+                    'product-list' => 'قائمة منتجات',
                     'footer-links'      => 'روابط التذييل',
                     'image-carousel'    => 'عرض الصور',
                     'product-carousel'  => 'شريط المنتجات',
@@ -3551,6 +3551,7 @@ return [
                 'sku-placeholder'   => 'أدخل رمز المنتج',
                 'select-category'   => 'اختر التصنيف',
                 'select-brand'      => 'اختر العلامة التجارية',
+                'type' => 'زر الاختيار',
 
                 'services-content' => [
                     'add-btn'            => 'أضف الخدمات',
