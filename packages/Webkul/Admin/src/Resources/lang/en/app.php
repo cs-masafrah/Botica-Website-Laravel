@@ -1585,6 +1585,7 @@ return [
                 'slug'                     => 'Slug',
                 'title'                    => 'Add New Category',
                 'visible-in-menu'          => 'Visible In Menu',
+
             ],
 
             'edit' => [
@@ -3555,6 +3556,8 @@ return [
                 'sku-placeholder'   => 'Enter SKU',
                 'select-category'   => 'Select Category',
                 'select-brand'      => 'Select Brand',
+                'type'      => 'Button Type',
+
 
 
                 'services-content' => [
