@@ -8,4 +8,4 @@
 #import ../packages/Webkul/Reel/src/GraphQL/schema.graphql
 
 # You can also add custom schemas here
-# import ./custom/*.graphql
+#import ./custom/*.graphql
